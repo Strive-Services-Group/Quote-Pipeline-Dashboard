@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quote Pipeline Dashboard — Home Maintenance Services</title>
+<script src="https://alcdn.msauth.net/browser/2.38.1/js/msal-browser.min.js"></script>
+<style>
+  :root{
+    --steel:#618FB4; --ocean:#145A95; --slate:#1F466B;
+    --bg:#0e1b2a; --panel:#13243a; --panel2:#172c46; --line:#27425f;
+    --ink:#e8eef7; --muted:#9fb3c8; --good:#2E8B57; --warn:#E8A33D; --bad:#c0504d;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Segoe UI',Aptos,Gotham,system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);}
+  /* ---- login overlay ---- */
+  #loginOverlay{position:fixed;inset:0;z-index:50;background:linear-gradient(135deg,#0b1622,#15324f);display:flex;align-items:center;justify-content:center;}
+  #loginOverlay.hidden{display:none;}
+  .login-card{background:rgba(19,36,58,.85);border:1px solid #2a456a;border-radius:16px;padding:38px 40px;width:380px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);}
+  .login-card h1{font-size:20px;margin:6px 0 2px;color:#fff;}
+  .login-card p{color:var(--muted);font-size:13px;margin:0 0 22px;}
+  .btn{cursor:pointer;border:none;border-radius:10px;padding:11px 20px;font-size:14px;font-weight:600;background:var(--ocean);color:#fff;transition:.15s;}
+  .btn:hover{background:var(--steel);}
+  .btn.ghost{background:transparent;border:1px solid var(--steel);color:var(--steel);}
+  .btn.ghost:hover{background:rgba(97,143,180,.12);}
+  #loginErr{display:none;color:#ffb3b0;font-size:12px;margin-top:14px;line-height:1.5;}
+  /* ---- header ---- */
+  header{display:flex;align-items:center;gap:16px;padding:14px 22px;background:linear-gradient(90deg,var(--slate),var(--ocean));border-bottom:1px solid #2a456a;flex-wrap:wrap;}
+  header h2{margin:0;font-size:17px;font-weight:700;letter-spacing:.3px;}
+  header .sub{font-size:11px;color:#cfe0f2;opacity:.85;margin-top:2px;}
+  .spacer{flex:1;}
+  .pill{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 13px;font-size:12px;}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--warn);}
+  .dot.live{background:var(--good);} .dot.err{background:var(--bad);}
+  /* ---- controls ---- */
+  .controls{display:flex;align-items:center;gap:12px;padding:12px 22px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap;}
+  .controls label{font-size:12px;color:var(--muted);}
+  select,input[type=text]{background:var(--panel2);border:1px solid #2a456a;color:var(--ink);border-radius:8px;padding:8px 10px;font-size:13px;}
+  input[type=text]{min-width:230px;}
+  .kpis{display:flex;gap:10px;flex-wrap:wrap;margin-left:auto;}
+  .kpi{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 14px;text-align:center;min-width:92px;}
+  .kpi b{display:block;font-size:18px;color:#fff;} .kpi span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
+  /* ---- table ---- */
+  .wrap{padding:14px 22px 40px;overflow:auto;}
+  table{border-collapse:collapse;width:100%;font-size:12.5px;}
+  thead th{position:sticky;top:0;background:var(--slate);color:#eaf2fb;text-align:left;padding:9px 10px;border:1px solid #2a456a;white-space:nowrap;font-weight:600;}
+  tbody td{padding:7px 10px;border:1px solid var(--line);vertical-align:top;}
+  tbody tr:nth-child(even){background:rgba(255,255,255,.025);}
+  tbody tr:hover{background:rgba(97,143,180,.10);}
+  .qno{font-weight:700;color:#8fc0ea;white-space:nowrap;}
+  .muted{color:var(--muted);}
+  .none{color:#5d7791;font-style:italic;}
+  .tag{display:inline-block;background:rgba(97,143,180,.16);border:1px solid #2a456a;border-radius:6px;padding:1px 6px;margin:1px 2px;font-size:11px;white-space:nowrap;}
+  .tag.cust{background:rgba(46,139,87,.18);border-color:#2E8B57;}
+  .tag.markup{background:rgba(232,163,61,.18);border-color:#E8A33D;}
+  .tag.quote{background:rgba(97,143,180,.18);}
+  .tag.bad{background:rgba(192,80,77,.20);border-color:#c0504d;}
+  .dur{font-weight:600;color:#cfe6ff;cursor:help;border-bottom:1px dotted #4a6b8a;}
+  .nowrap{white-space:nowrap;}
+  .small{font-size:11px;}
+  /* ---- KPI panels ---- */
+  .kpiPanel{padding:10px 22px 2px;}
+  .kpiPanel h3{font-size:11.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--steel);margin:6px 0 10px;font-weight:700;}
+  .cardrow{display:flex;gap:11px;flex-wrap:wrap;}
+  .tcard{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:11px 14px;min-width:150px;flex:1;}
+  .tcard .lbl{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+  .tcard .big{font-size:19px;font-weight:700;color:#fff;margin-top:3px;}
+  .tcard .big .n{font-size:11px;color:var(--muted);font-weight:400;}
+  .delta{font-size:12px;margin-top:6px;display:flex;align-items:center;gap:5px;}
+  .delta.pos{color:#4ec98a;} .delta.neg{color:#e06b66;} .delta.flat{color:var(--muted);}
+  .mini{font-size:10.5px;color:var(--muted);margin-top:7px;}
+  .mini b{color:#bcd;font-weight:600;}
+  .proc .big{color:#cfe6ff;}
+  .big.good{color:#4ec98a;} .big.bad{color:#e06b66;}
+  #emptyMsg{padding:40px;text-align:center;color:var(--muted);}
+  .legend{font-size:11px;color:var(--muted);padding:0 22px 14px;line-height:1.6;}
+  .legend code{background:var(--panel2);padding:1px 5px;border-radius:4px;color:#bcd;}
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="loginOverlay">
+  <div class="login-card">
+    <h1>Quote Pipeline Dashboard</h1>
+    <p>Home Maintenance Services · Live from Dynamics 365 &amp; D365 F&amp;O</p>
+    <button class="btn" id="signinBtn" onclick="signIn()">Sign in with Microsoft</button>
+    <div id="loginErr"></div>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<header>
+  <div>
+    <h2>Quote Pipeline — Home Maintenance Services</h2>
+    <div class="sub">Live extraction: Quote · Opportunity · Work Order · Booking · Activity · Approval · PR (F&amp;O)</div>
+  </div>
+  <div class="spacer"></div>
+  <span class="pill"><span class="dot" id="statusDot"></span><span id="statusTxt">not signed in</span></span>
+  <span class="pill" id="userPill" style="display:none"></span>
+  <button class="btn ghost" onclick="refreshAll()" id="refreshBtn" style="display:none">Refresh</button>
+  <button class="btn ghost" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
+</header>
+
+<div class="controls" id="controls" style="display:none">
+  <label>Quote window</label>
+  <select id="windowSel" onchange="refreshAll()">
+    <option value="14">Last 14 days</option>
+    <option value="30" selected>Last 30 days</option>
+    <option value="60">Last 60 days</option>
+    <option value="90">Last 90 days</option>
+    <option value="180">Last 180 days</option>
+  </select>
+  <input type="text" id="search" placeholder="Search quote no, project, PR, status…" oninput="render()">
+  <div class="kpis">
+    <div class="kpi"><b id="kQuotes">—</b><span>Quotes</span></div>
+    <div class="kpi"><b id="kWO">—</b><span>Work Orders</span></div>
+    <div class="kpi"><b id="kRFQ">—</b><span>RFQ Emails</span></div>
+    <div class="kpi"><b id="kAppr">—</b><span>Approvals</span></div>
+    <div class="kpi"><b id="kPR">—</b><span>CPR PRs</span></div>
+  </div>
+</div>
+
+<div class="kpiPanel" id="trendKpis" style="display:none"></div>
+<div class="kpiPanel" id="procKpis" style="display:none"></div>
+
+<div class="legend" id="legend" style="display:none">
+  Live pipeline — one row per quote in the window, joined on <b>Quote No</b>. Durations show as <code>d/h/m</code>; hover any value to see the start → end timestamps.
+  <b>Drafting</b> = opportunity created → PR created (or, when no PR is raised, → internal/markup approval created) · <b>RFQ Process</b> = PR created → RFQ-completion email · <b>Internal Approval</b> = Quote+Markup approval created → modified (when Approved) · <b>Customer Approval</b> = Customer approval created → modified · <b>Work Execution</b> = WO created → booking End Job · <b>Ageing</b> = opportunity created → now.
+</div>
+
+<div class="wrap" id="wrap" style="display:none">
+  <table id="tbl">
+    <thead>
+      <tr>
+        <th>Quote No</th>
+        <th>Created Date &amp; Time<br><span class="small muted">(parent opportunity)</span></th>
+        <th>Drafting Time<br><span class="small muted">created → PR raised</span></th>
+        <th>RFQ Process Time<br><span class="small muted">PR created → RFQ email</span></th>
+        <th>Internal Approval Time<br><span class="small muted">Quote+Markup</span></th>
+        <th>Customer Approval Time</th>
+        <th>Work Execution Time<br><span class="small muted">WO created → End Job</span></th>
+        <th>Total Job Completion Ageing</th>
+        <th>Quote Current Status</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <div id="emptyMsg" style="display:none">No quotes found in the selected window.</div>
+</div>
+
+<script>
+/* =====================================================================
+   CONFIG — reused from the existing live dashboards (same environment)
+   ===================================================================== */
+const CRM_BASE   = 'https://operations-ifahr-live.crm15.dynamics.com/api/data/v9.2';
+const CRM_SCOPE  = 'https://operations-ifahr-live.crm15.dynamics.com/user_impersonation';
+const MSAL_CONFIG = {
+  auth: {
+    clientId: '8a4338bf-6c78-4a70-9c62-478bb19b171c',
+    authority: 'https://login.microsoftonline.com/f9454680-0e71-4aca-8616-3a77bda74f7e',
+    redirectUri: window.location.origin + window.location.pathname
+  },
+  cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: true }
+};
+const CANDOO_DIVISION = '93bd43eb-0a44-ef11-a316-6045bd6a8335';   // Work Order division filter
+// PR live proxy (D365 F&O) — same Azure Function the PR/PO dashboard uses
+const PR_PROXY = 'https://pr-po-dashboard-proxy-b4budzexh7eveved.uaenorth-01.azurewebsites.net/api';
+const PR_CODE  = 'hxj_IHMOErx6gGKKJlZcIZkFm8hCh3dbkxckMOAf5XBMAzFuycxNog==';
+const F = '@OData.Community.Display.V1.FormattedValue';
+
+let msalInstance = null, account = null, crmToken = null, refreshTimer = null;
+let DATA = [];   // joined rows
+
+/* ============================ AUTH ============================ */
+function setStatus(txt, cls){ document.getElementById('statusTxt').textContent = txt;
+  const d=document.getElementById('statusDot'); d.className='dot'+(cls?(' '+cls):''); }
+
+async function initMsal(){
+  if(typeof msal==='undefined') throw new Error('Microsoft sign-in library failed to load (blocked by network). Reload, and if it persists ask IT to allow alcdn.msauth.net.');
+  if(!msalInstance){ msalInstance = new msal.PublicClientApplication(MSAL_CONFIG);
+    if(msalInstance.initialize) await msalInstance.initialize(); }
+  const resp = await msalInstance.handleRedirectPromise();
+  if(resp && resp.account) account = resp.account;
+  if(!account){ const all = msalInstance.getAllAccounts(); if(all.length) account = all[0]; }
+}
+
+async function signIn(){
+  const err=document.getElementById('loginErr'); err.style.display='none';
+  try{
+    await initMsal();
+    if(!account){
+      const r = await msalInstance.loginPopup({ scopes:['User.Read', CRM_SCOPE] });
+      account = r.account;
+    }
+    await enterApp();
+  }catch(e){ err.textContent = e.message || String(e); err.style.display='block'; }
+}
+
+async function getToken(){
+  const req = { scopes:[CRM_SCOPE], account };
+  try{ const r = await msalInstance.acquireTokenSilent(req); return r.accessToken; }
+  catch(e){ const r = await msalInstance.acquireTokenPopup(req); return r.accessToken; }
+}
+
+async function enterApp(){
+  document.getElementById('loginOverlay').classList.add('hidden');
+  ['controls','trendKpis','procKpis','wrap','legend'].forEach(id=>document.getElementById(id).style.display='');
+  ['refreshBtn','signoutBtn'].forEach(id=>document.getElementById(id).style.display='');
+  const up=document.getElementById('userPill'); up.style.display=''; up.textContent = account.name || account.username || 'Signed in';
+  await refreshAll();
+  if(refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = setInterval(()=>refreshAll().catch(()=>{}), 5*60*1000);
+}
+
+function signOut(){ try{ msalInstance.logoutPopup(); }catch(e){} location.reload(); }
+
+/* ============================ DATAVERSE GET (paged) ============================ */
+async function dvGet(path){
+  const token = crmToken || (crmToken = await getToken());
+  let url = CRM_BASE + '/' + path, out = [], guard = 0;
+  while(url && guard++ < 200){
+    let r = await fetch(url, { headers:{ Authorization:'Bearer '+token, Accept:'application/json',
+      'OData-MaxVersion':'4.0','OData-Version':'4.0', Prefer:'odata.include-annotations="*",odata.maxpagesize=5000' }});
+    if(r.status===401){ crmToken = await getToken(); continue; }
+    if(!r.ok){ throw new Error('CRM '+r.status+' '+(await r.text()).slice(0,160)); }
+    const j = await r.json(); out = out.concat(j.value||[]); url = j['@odata.nextLink'] || null;
+  }
+  return out;
+}
+
+/* ============================ LOAD + JOIN ============================ */
+function isoDaysAgo(d){ return new Date(Date.now()-d*864e5).toISOString(); }
+function fmt(v){ if(!v) return ''; const d=new Date(v); if(isNaN(d)) return '';
+  return d.toLocaleString('en-GB',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+function ms(v){ if(!v) return null; const d=new Date(v); return isNaN(d)?null:d.getTime(); }
+// humanize a raw ms duration -> "2d 3h" / "5h 12m" / "8m" (signed)
+function fmtDurMs(d){ if(d==null||isNaN(d)) return null; const neg=d<0; let x=Math.abs(d);
+  const day=Math.floor(x/864e5); x-=day*864e5; const hr=Math.floor(x/36e5); x-=hr*36e5; const mn=Math.floor(x/6e4);
+  const s = day>0?(day+'d '+hr+'h') : (hr>0?(hr+'h '+mn+'m') : (mn+'m')); return (neg?'-':'')+s; }
+function durMs(a,b){ const s=ms(a), e=ms(b); if(s==null||e==null) return null; const d=e-s; return d<0?null:d; }
+function dur(a,b){ const d=durMs(a,b); return d==null?null:fmtDurMs(d); }
+function ageDays(a){ const s=ms(a); if(s==null) return null; return Math.floor((Date.now()-s)/864e5); }
+const APPROVED=3;
+// span over approval records of given type values: start=min(created), end=max(modified) of APPROVED rows
+function apprSpan(recs, typeVals){
+  const rs=(recs||[]).filter(r=>typeVals.includes(r.typeVal));
+  if(!rs.length) return {val:null,ms:null,status:'',start:null,end:null};
+  const start=rs.reduce((m,r)=> (m==null||ms(r.created)<ms(m))?r.created:m, null);
+  const appr=rs.filter(r=>r.statusVal===APPROVED);
+  const end=appr.length? appr.reduce((m,r)=> (m==null||ms(r.modified)>ms(m))?r.modified:m, null) : null;
+  let status;
+  if(appr.length) status='Approved';
+  else if(rs.some(r=>r.statusVal===4)) status='Rejected';
+  else status=(rs[rs.length-1].status||'Pending');
+  const m2 = end? durMs(start,end) : null;
+  return {val: m2==null?null:fmtDurMs(m2), ms:m2, status, start, end};
+}
+
+async function refreshAll(){
+  setStatus('syncing…','warn');
+  try{
+    crmToken = await getToken();
+    const win = isoDaysAgo(parseInt(document.getElementById('windowSel').value,10));
+
+    // --- 1. Quotes (base) + parent opportunity createdon ---
+    const quotes = await dvGet("quotes?$select=quoteid,quotenumber,createdon,statuscode,name,_opportunityid_value"
+      + "&$expand=opportunityid($select=createdon,name)"
+      + "&$filter="+encodeURIComponent("createdon ge "+win));
+
+    // --- 2. RFQ Completion emails (Activity) ---
+    const emails = await dvGet("emails?$select=subject,createdon,_regardingobjectid_value"
+      + "&$expand=regardingobjectid_quote($select=quotenumber)"
+      + "&$filter="+encodeURIComponent("startswith(subject,'RFQ Completion Notification') and createdon ge "+win));
+
+    // --- 3. Approvals (ssg_approvalhistory) ---
+    const approvals = await dvGet("ssg_approvalhistories?$select=ssg_name,ssg_approvaltype,ssg_status,ssg_approvedrejectedon,ssg_approvername,createdon,modifiedon,_ssg_quote_value"
+      + "&$filter="+encodeURIComponent("createdon ge "+win));
+
+    // --- 4. Work Orders (Candoo division) ---
+    const wos = await dvGet("msdyn_workorders?$select=msdyn_name,ssg_quotenumber,msdyn_systemstatus,createdon"
+      + "&$filter="+encodeURIComponent("_ssg_division_value eq "+CANDOO_DIVISION+" and createdon ge "+win));
+
+    // --- 5. Bookings (linked to Candoo work orders) ---
+    const bookings = await dvGet("bookableresourcebookings?$select=ssg_bookingnumber,ssg_plannedstartdate,starttime,endtime,createdon,_msdyn_workorder_value"
+      + "&$expand=msdyn_workorder($select=ssg_quotenumber,_ssg_division_value)"
+      + "&$filter="+encodeURIComponent("msdyn_workorder/_ssg_division_value eq "+CANDOO_DIVISION+" and createdon ge "+win));
+
+    // --- 6. PR (D365 F&O via proxy), filter CPR ---
+    let prRows = [];
+    try{
+      const pr = await fetch(PR_PROXY+'/pr?code='+PR_CODE).then(r=>r.ok?r.json():null);
+      prRows = (pr && pr.rows ? pr.rows : []).filter(r=>String(r.purchaseRequisition||'').toUpperCase().startsWith('CPR'));
+    }catch(e){ console.warn('PR proxy failed', e); }
+
+    // ---- index helper maps (by Quote No) ----
+    const quoteByGuid = {}; quotes.forEach(q=>{ if(q.quoteid) quoteByGuid[q.quoteid.toLowerCase()] = q.quotenumber; });
+
+    const emailByQ = {};
+    emails.forEach(e=>{ const qn = e.regardingobjectid_quote && e.regardingobjectid_quote.quotenumber; if(!qn) return;
+      if(!emailByQ[qn] || new Date(e.createdon) < new Date(emailByQ[qn])) emailByQ[qn] = e.createdon; }); // earliest RFQ email
+
+    const apprByQ = {};
+    approvals.forEach(a=>{ const g=(a._ssg_quote_value||'').toLowerCase(); const qn = quoteByGuid[g]; if(!qn) return;
+      (apprByQ[qn] = apprByQ[qn] || []).push({ type:a['ssg_approvaltype'+F]||'', typeVal:a.ssg_approvaltype,
+        status:a['ssg_status'+F]||'', statusVal:a.ssg_status, actionDate:a.ssg_approvedrejectedon,
+        approver:a.ssg_approvername||'', created:a.createdon, modified:a.modifiedon }); });
+
+    const woByQ = {};
+    wos.forEach(w=>{ const qn=w.ssg_quotenumber; if(!qn) return;
+      if(!woByQ[qn] || new Date(w.createdon) > new Date(woByQ[qn].createdon)) woByQ[qn] = w; }); // latest WO
+
+    // Booking aggregate per quote: earliest planned start + latest End Job (endtime)
+    const bookByQ = {};
+    bookings.forEach(b=>{ const qn = b.msdyn_workorder && b.msdyn_workorder.ssg_quotenumber; if(!qn) return;
+      const a = bookByQ[qn] || (bookByQ[qn] = { plannedStart:null, endJob:null, bookingNo:b.ssg_bookingnumber });
+      if(b.ssg_plannedstartdate && (a.plannedStart==null || new Date(b.ssg_plannedstartdate) < new Date(a.plannedStart))) a.plannedStart=b.ssg_plannedstartdate;
+      if(b.endtime && (a.endJob==null || new Date(b.endtime) > new Date(a.endJob))) a.endJob=b.endtime; });
+
+    const prByQ = {};
+    prRows.forEach(p=>{ const qn = p.quotationReference; if(!qn) return; if(!prByQ[qn]) prByQ[qn] = p; });
+
+    // ---- build joined rows + compute pipeline stage durations ----
+    DATA = quotes.map(q=>{
+      const qn = q.quotenumber;
+      const wo = woByQ[qn], bk = bookByQ[qn], pr = prByQ[qn], appr = apprByQ[qn] || [];
+      const oppCreated = q.opportunityid ? q.opportunityid.createdon : '';
+      const rfqEmail   = emailByQ[qn] || '';
+      const prCreated  = pr ? pr.createdDate : '';
+      const woCreated  = wo ? wo.createdon : '';
+      const endJob     = bk ? bk.endJob : '';
+      const internal   = apprSpan(appr,[2,5]);   // Quote Approval + Markup Approval
+      const customer   = apprSpan(appr,[4]);     // Customer Approval
+      // Drafting end = PR created; if no PR (quote went straight to internal/markup approval), use that approval's created-on
+      const draftEnd   = prCreated || internal.start;
+      return {
+        quoteNo: qn,
+        createdDateTime: oppCreated,                       // parent opportunity createdon
+        drafting:  { val: dur(oppCreated, draftEnd), ms: durMs(oppCreated, draftEnd), a:oppCreated, b:draftEnd, noPr:!prCreated&&!!internal.start },   // opp created -> PR created (or internal approval created)
+        rfq:       { val: dur(prCreated, rfqEmail),   ms: durMs(prCreated, rfqEmail), a:prCreated,  b:rfqEmail  },   // PR created -> RFQ completion email
+        internal,
+        customer,
+        workExec:  { val: dur(woCreated, endJob),     ms: durMs(woCreated, endJob),   a:woCreated,  b:endJob    },   // WO created -> booking End Job
+        ageing:    ageDays(oppCreated),                                              // opp created -> now
+        status:    q['statuscode'+F] || '',
+        // raw kept for search/tooltips
+        _name: q.name||'', _prNo: pr?pr.purchaseRequisition:'', _prLoc: pr?(pr.location||pr.projectId):'',
+        _prDept: pr?pr.department:'', _woName: wo?wo.msdyn_name:'', _quoteCreated:q.createdon
+      };
+    }).sort((a,b)=> new Date(b.createdDateTime||b._quoteCreated) - new Date(a.createdDateTime||a._quoteCreated));
+
+    // KPIs
+    document.getElementById('kQuotes').textContent = DATA.length.toLocaleString();
+    document.getElementById('kWO').textContent = Object.keys(woByQ).length.toLocaleString();
+    document.getElementById('kRFQ').textContent = Object.keys(emailByQ).length.toLocaleString();
+    document.getElementById('kAppr').textContent = approvals.length.toLocaleString();
+    document.getElementById('kPR').textContent = prRows.length.toLocaleString();
+
+    render();
+    renderKpis();
+    const t = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    setStatus('live · '+t, 'live');
+  }catch(e){
+    console.error(e); setStatus('error', 'err');
+    alert('Load failed: '+(e.message||e));
+  }
+}
+
+/* ============================ RENDER ============================ */
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function dcell(v){ return v ? '<span class="nowrap">'+fmt(v)+'</span>' : '<span class="none">—</span>'; }
+// duration cell with start→end tooltip
+function durCell(o){ if(o && o.val) return '<span class="dur" title="'+escapeHtml(fmt(o.a)+'  →  '+fmt(o.b))+'">'+o.val+'</span>';
+  return '<span class="none">—</span>'; }
+function statusCls(s){ s=(s||'').toLowerCase(); if(s.indexOf('approv')>=0&&s.indexOf('reject')<0) return 'cust';
+  if(s.indexOf('reject')>=0) return 'bad'; return 'markup'; }
+// approval cell: duration when approved, else status badge
+function apprCell(o){ if(!o || !o.status) return '<span class="none">—</span>';
+  const badge='<span class="tag '+statusCls(o.status)+'">'+escapeHtml(o.status)+'</span>';
+  if(o.val) return '<span class="dur" title="'+escapeHtml(fmt(o.start)+'  →  '+fmt(o.end))+'">'+o.val+'</span> '+badge;
+  return badge; }
+
+function render(){
+  const q = (document.getElementById('search').value||'').toLowerCase().trim();
+  let rows = DATA;
+  if(q){ rows = DATA.filter(r => (r.quoteNo+' '+r._name+' '+r._prNo+' '+r._prLoc+' '+r._prDept+' '+r.status+' '+r._woName).toLowerCase().includes(q)); }
+  const tb = document.getElementById('tbody');
+  document.getElementById('emptyMsg').style.display = rows.length ? 'none' : '';
+  tb.innerHTML = rows.map(r=>`
+    <tr>
+      <td class="qno">${escapeHtml(r.quoteNo)}</td>
+      <td>${dcell(r.createdDateTime)}</td>
+      <td>${durCell(r.drafting)}</td>
+      <td>${durCell(r.rfq)}</td>
+      <td>${apprCell(r.internal)}</td>
+      <td>${apprCell(r.customer)}</td>
+      <td>${durCell(r.workExec)}</td>
+      <td>${ r.ageing!=null ? '<span class="nowrap">'+r.ageing+' days</span>' : '<span class="none">—</span>' }</td>
+      <td>${ r.status ? '<span class="tag">'+escapeHtml(r.status)+'</span>' : '<span class="none">—</span>' }</td>
+    </tr>`).join('');
+}
+
+/* ============================ KPIs ============================ */
+const WK_MS = 7*864e5;
+const RFQ_SLA_MS = 24*36e5;   // 24-hour RFQ SLA
+function avg(a){ return a.length ? a.reduce((s,x)=>s+x,0)/a.length : null; }
+function metricMs(r,k){ if(k==='ageing') return r.ageing!=null ? r.ageing*864e5 : null; return r[k] ? r[k].ms : null; }
+function weekOf(r){ const t=ms(r.createdDateTime); if(t==null) return -1; const d=(Date.now()-t)/864e5; return d<0?0:Math.floor(d/7); }
+
+const TREND_METRICS=[
+  {k:'count',     label:'Quotes',            lowerBetter:false},
+  {k:'drafting',  label:'Drafting'},
+  {k:'rfq',       label:'RFQ Process'},
+  {k:'internal',  label:'Internal Approval'},
+  {k:'customer',  label:'Customer Approval'},
+  {k:'workExec',  label:'Work Execution'},
+  {k:'ageing',    label:'Total Ageing'}
+];
+
+function renderKpis(){
+  const wk=[[],[],[]];                          // 3 rolling 7-day buckets by opportunity-created
+  DATA.forEach(r=>{ const w=weekOf(r); if(w>=0&&w<3) wk[w].push(r); });
+  const cards = TREND_METRICS.map(m=>{
+    const v=[null,null,null], n=[0,0,0];
+    for(let w=0;w<3;w++){
+      if(m.k==='count'){ v[w]=wk[w].length; n[w]=wk[w].length; }
+      else { const vals=wk[w].map(r=>metricMs(r,m.k)).filter(x=>x!=null); v[w]=avg(vals); n[w]=vals.length; }
+    }
+    return trendCard(m,v,n);
+  }).join('');
+  document.getElementById('trendKpis').innerHTML =
+    '<h3>3-Week Trend · bucketed by opportunity-created week (W0 = last 7 days · arrow = W0 vs W-1)</h3><div class="cardrow">'+cards+'</div>';
+  renderProc();
+}
+
+function trendCard(m,v,n){
+  const isCount = m.k==='count';
+  const w0=v[0], w1=v[1];
+  const big = isCount
+    ? (w0||0)+' <span class="n">quotes</span>'
+    : (w0!=null ? fmtDurMs(w0)+' <span class="n">(n='+n[0]+')</span>' : '<span class="none">—</span>');
+  let delta='<div class="delta flat">▬ <span>no prior week</span></div>';
+  if(w0!=null && w1!=null){
+    const diff = w0 - w1;
+    const lowerBetter = m.lowerBetter!==false;          // durations: lower is better; count: higher is better
+    const worse = lowerBetter ? diff>0 : diff<0;
+    const cls = diff===0 ? 'flat' : (worse ? 'neg' : 'pos');
+    const arrow = diff>0 ? '▲' : (diff<0 ? '▼' : '▬');
+    const diffTxt = isCount ? (Math.abs(diff)+' quotes') : fmtDurMs(Math.abs(diff));
+    delta='<div class="delta '+cls+'">'+arrow+' <span>'+diffTxt+' vs last wk</span></div>';
+  }
+  const cell=(x)=> isCount ? (x||0) : (x!=null?fmtDurMs(x):'—');
+  const mini='W-2 <b>'+cell(v[2])+'</b> · W-1 <b>'+cell(v[1])+'</b> · W0 <b>'+cell(v[0])+'</b>';
+  return '<div class="tcard"><div class="lbl">'+m.label+'</div><div class="big">'+big+'</div>'+delta+'<div class="mini">'+mini+'</div></div>';
+}
+
+function renderProc(){
+  const withPR = DATA.filter(r=> r.rfq && r.rfq.a);          // PR exists (rfq.a = PR created date)
+  const done   = withPR.filter(r=> r.rfq.ms!=null);          // RFQ completion email received
+  const avgMs  = avg(done.map(r=>r.rfq.ms));
+  const onTime = done.filter(r=> r.rfq.ms<=RFQ_SLA_MS).length;
+  const pct    = done.length ? Math.round(onTime/done.length*100) : null;
+  const pending= withPR.filter(r=> r.rfq.ms==null).length;   // PR raised, no RFQ email yet
+  const last7  = done.filter(r=> ms(r.rfq.b) >= Date.now()-WK_MS).length;
+  const slowest= done.length ? Math.max.apply(null, done.map(r=>r.rfq.ms)) : null;
+  const card=(lbl,big,sub,cls)=> '<div class="tcard"><div class="lbl">'+lbl+'</div><div class="big '+(cls||'')+'">'+big+'</div>'+(sub?'<div class="mini">'+sub+'</div>':'')+'</div>';
+  document.getElementById('procKpis').innerHTML =
+    '<h3>Procurement · RFQ Performance — PR created → RFQ completion (SLA 24h)</h3><div class="cardrow proc">'
+    + card('Avg RFQ Time', avgMs!=null?fmtDurMs(avgMs):'—', done.length+' RFQs completed')
+    + card('On-time ≤24h', pct!=null?pct+'%':'—', onTime+' of '+done.length, pct!=null?(pct>=80?'good':(pct<50?'bad':'')):'')
+    + card('Completed (7d)', String(last7), 'RFQ emails last 7 days')
+    + card('Pending RFQ', String(pending), 'PR raised, awaiting RFQ', pending>0?'bad':'good')
+    + card('Slowest RFQ', slowest!=null?fmtDurMs(slowest):'—', 'max in window')
+    + '</div>';
+}
+
+/* ============================ BOOT ============================ */
+(async function(){
+  try{
+    await initMsal();
+    if(account){ await enterApp(); }   // silent re-entry if already signed in
+  }catch(e){ /* show login */ }
+})();
+</script>
+</body>
+</html>
