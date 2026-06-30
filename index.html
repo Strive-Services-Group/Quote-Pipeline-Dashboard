@@ -5,76 +5,86 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Quote Pipeline Dashboard — Home Maintenance Services</title>
 <script src="https://alcdn.msauth.net/browser/2.38.1/js/msal-browser.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
     --steel:#618FB4; --ocean:#145A95; --slate:#1F466B;
-    --bg:#0e1b2a; --panel:#13243a; --panel2:#172c46; --line:#27425f;
-    --ink:#e8eef7; --muted:#9fb3c8; --good:#2E8B57; --warn:#E8A33D; --bad:#c0504d;
+    --bg:#F4F7FB; --card:#FFFFFF; --line:#E5E9F0;
+    --ink:#1F2937; --muted:#64748B; --good:#2E8B57; --warn:#E8A33D; --bad:#C0392B;
+    --shadow:0 4px 14px rgba(31,70,107,.08); --shadow-lg:0 12px 32px rgba(31,70,107,.16);
   }
   *{box-sizing:border-box}
-  body{margin:0;font-family:'Segoe UI',Aptos,Gotham,system-ui,Arial,sans-serif;background:var(--bg);color:var(--ink);}
+  body{margin:0;font-family:'Aptos','Gotham','Cairo','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);}
   /* ---- login overlay ---- */
-  #loginOverlay{position:fixed;inset:0;z-index:50;background:linear-gradient(135deg,#0b1622,#15324f);display:flex;align-items:center;justify-content:center;}
+  #loginOverlay{position:fixed;inset:0;z-index:50;background:linear-gradient(135deg,var(--slate) 0%,var(--ocean) 60%,var(--steel) 100%);display:flex;align-items:center;justify-content:center;}
   #loginOverlay.hidden{display:none;}
-  .login-card{background:rgba(19,36,58,.85);border:1px solid #2a456a;border-radius:16px;padding:38px 40px;width:380px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5);}
-  .login-card h1{font-size:20px;margin:6px 0 2px;color:#fff;}
+  .login-card{background:#fff;border-radius:18px;padding:34px 38px;width:380px;text-align:center;box-shadow:var(--shadow-lg);}
+  .login-card img{height:44px;margin-bottom:16px;}
+  .login-card h1{font-size:19px;margin:4px 0 2px;color:var(--slate);font-weight:700;}
   .login-card p{color:var(--muted);font-size:13px;margin:0 0 22px;}
-  .btn{cursor:pointer;border:none;border-radius:10px;padding:11px 20px;font-size:14px;font-weight:600;background:var(--ocean);color:#fff;transition:.15s;}
-  .btn:hover{background:var(--steel);}
-  .btn.ghost{background:transparent;border:1px solid var(--steel);color:var(--steel);}
-  .btn.ghost:hover{background:rgba(97,143,180,.12);}
-  #loginErr{display:none;color:#ffb3b0;font-size:12px;margin-top:14px;line-height:1.5;}
+  .btn{cursor:pointer;border:none;border-radius:10px;padding:11px 22px;font-size:14px;font-weight:600;background:var(--ocean);color:#fff;transition:.15s;font-family:inherit;}
+  .btn:hover{background:var(--slate);}
+  #loginErr{display:none;color:var(--bad);font-size:12px;margin-top:14px;line-height:1.5;}
   /* ---- header ---- */
-  header{display:flex;align-items:center;gap:16px;padding:14px 22px;background:linear-gradient(90deg,var(--slate),var(--ocean));border-bottom:1px solid #2a456a;flex-wrap:wrap;}
-  header h2{margin:0;font-size:17px;font-weight:700;letter-spacing:.3px;}
-  header .sub{font-size:11px;color:#cfe0f2;opacity:.85;margin-top:2px;}
+  header{display:flex;align-items:center;gap:16px;padding:10px 28px;background:linear-gradient(135deg,var(--slate) 0%,var(--ocean) 60%,var(--steel) 100%);color:#fff;box-shadow:var(--shadow-lg);flex-wrap:wrap;}
+  .brand{display:flex;align-items:center;gap:13px;}
+  .brand-logo{background:#fff;border-radius:9px;padding:5px 10px;display:flex;align-items:center;}
+  .brand-logo img{height:30px;width:auto;display:block;}
+  header h2{margin:0;font-size:19px;font-weight:700;letter-spacing:.2px;color:#fff;}
+  header .sub{font-size:12px;color:#dce8f5;opacity:.92;margin-top:2px;}
   .spacer{flex:1;}
-  .pill{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:6px 13px;font-size:12px;}
+  .pill{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.22);border-radius:999px;padding:6px 13px;font-size:12px;color:#fff;}
   .dot{width:8px;height:8px;border-radius:50%;background:var(--warn);}
-  .dot.live{background:var(--good);} .dot.err{background:var(--bad);}
+  .dot.live{background:#7CE3A6;} .dot.err{background:#ff9a96;}
+  .hbtn{cursor:pointer;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:6px 15px;font-size:12.5px;font-weight:600;transition:.15s;font-family:inherit;}
+  .hbtn:hover{background:rgba(255,255,255,.26);}
   /* ---- controls ---- */
-  .controls{display:flex;align-items:center;gap:12px;padding:12px 22px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap;}
-  .controls label{font-size:12px;color:var(--muted);}
-  select,input[type=text]{background:var(--panel2);border:1px solid #2a456a;color:var(--ink);border-radius:8px;padding:8px 10px;font-size:13px;}
-  input[type=text]{min-width:230px;}
+  .controls{display:flex;align-items:center;gap:12px;padding:14px 28px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap;}
+  .controls label{font-size:12px;color:var(--muted);font-weight:600;}
+  select,input[type=text]{background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:9px;padding:8px 11px;font-size:13px;font-family:inherit;}
+  input[type=text]{min-width:240px;}
+  input[type=text]:focus,select:focus{outline:none;border-color:var(--steel);}
   .kpis{display:flex;gap:10px;flex-wrap:wrap;margin-left:auto;}
-  .kpi{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 14px;text-align:center;min-width:92px;}
-  .kpi b{display:block;font-size:18px;color:#fff;} .kpi span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
+  .kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 16px;text-align:center;min-width:92px;box-shadow:var(--shadow);}
+  .kpi b{display:block;font-size:18px;color:var(--slate);} .kpi span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;}
   /* ---- table ---- */
-  .wrap{padding:14px 22px 40px;overflow:auto;}
-  table{border-collapse:collapse;width:100%;font-size:12.5px;}
-  thead th{position:sticky;top:0;background:var(--slate);color:#eaf2fb;text-align:left;padding:9px 10px;border:1px solid #2a456a;white-space:nowrap;font-weight:600;}
-  tbody td{padding:7px 10px;border:1px solid var(--line);vertical-align:top;}
-  tbody tr:nth-child(even){background:rgba(255,255,255,.025);}
-  tbody tr:hover{background:rgba(97,143,180,.10);}
-  .qno{font-weight:700;color:#8fc0ea;white-space:nowrap;}
+  .wrap{padding:14px 28px 44px;overflow:auto;}
+  table{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);}
+  thead th{position:sticky;top:0;background:linear-gradient(135deg,var(--slate),var(--ocean));color:#fff;text-align:left;padding:10px 11px;white-space:nowrap;font-weight:600;border-right:1px solid rgba(255,255,255,.12);}
+  tbody td{padding:8px 11px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);vertical-align:top;}
+  tbody tr:nth-child(even){background:#FAFBFD;}
+  tbody tr:hover{background:#EEF4FB;}
+  .qno{font-weight:700;color:var(--ocean);white-space:nowrap;}
   .muted{color:var(--muted);}
-  .none{color:#5d7791;font-style:italic;}
-  .tag{display:inline-block;background:rgba(97,143,180,.16);border:1px solid #2a456a;border-radius:6px;padding:1px 6px;margin:1px 2px;font-size:11px;white-space:nowrap;}
-  .tag.cust{background:rgba(46,139,87,.18);border-color:#2E8B57;}
-  .tag.markup{background:rgba(232,163,61,.18);border-color:#E8A33D;}
-  .tag.quote{background:rgba(97,143,180,.18);}
-  .tag.bad{background:rgba(192,80,77,.20);border-color:#c0504d;}
-  .dur{font-weight:600;color:#cfe6ff;cursor:help;border-bottom:1px dotted #4a6b8a;}
+  .none{color:#aab6c6;font-style:italic;}
+  .tag{display:inline-block;background:#EEF3F9;border:1px solid var(--line);border-radius:6px;padding:1px 7px;margin:1px 2px;font-size:11px;white-space:nowrap;color:var(--slate);}
+  .tag.cust{background:rgba(46,139,87,.12);border-color:#9ad3b4;color:#1c6b43;}
+  .tag.markup{background:rgba(232,163,61,.14);border-color:#eccb96;color:#9a6a12;}
+  .tag.quote{background:rgba(97,143,180,.14);border-color:#b6cee0;}
+  .tag.bad{background:rgba(192,57,43,.10);border-color:#e2a59e;color:#a4332a;}
+  .dur{font-weight:700;color:var(--slate);cursor:help;border-bottom:1px dotted #9bb4cb;}
   .nowrap{white-space:nowrap;}
   .small{font-size:11px;}
   /* ---- KPI panels ---- */
-  .kpiPanel{padding:10px 22px 2px;}
-  .kpiPanel h3{font-size:11.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--steel);margin:6px 0 10px;font-weight:700;}
-  .cardrow{display:flex;gap:11px;flex-wrap:wrap;}
-  .tcard{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:11px 14px;min-width:150px;flex:1;}
-  .tcard .lbl{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
-  .tcard .big{font-size:19px;font-weight:700;color:#fff;margin-top:3px;}
+  .kpiPanel{padding:14px 28px 2px;}
+  .kpiPanel h3{font-size:11.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--slate);margin:6px 0 11px;font-weight:700;}
+  .cardrow{display:flex;gap:12px;flex-wrap:wrap;}
+  .tcard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 15px;min-width:152px;flex:1;box-shadow:var(--shadow);}
+  .tcard .lbl{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:600;}
+  .tcard .big{font-size:20px;font-weight:700;color:var(--slate);margin-top:4px;}
   .tcard .big .n{font-size:11px;color:var(--muted);font-weight:400;}
-  .delta{font-size:12px;margin-top:6px;display:flex;align-items:center;gap:5px;}
-  .delta.pos{color:#4ec98a;} .delta.neg{color:#e06b66;} .delta.flat{color:var(--muted);}
+  .delta{font-size:12px;margin-top:6px;display:flex;align-items:center;gap:5px;font-weight:600;}
+  .delta.pos{color:var(--good);} .delta.neg{color:var(--bad);} .delta.flat{color:var(--muted);}
   .mini{font-size:10.5px;color:var(--muted);margin-top:7px;}
-  .mini b{color:#bcd;font-weight:600;}
-  .proc .big{color:#cfe6ff;}
-  .big.good{color:#4ec98a;} .big.bad{color:#e06b66;}
+  .mini b{color:var(--slate);font-weight:700;}
+  .proc .big{color:var(--ocean);}
+  .big.good{color:var(--good);} .big.bad{color:var(--bad);}
   #emptyMsg{padding:40px;text-align:center;color:var(--muted);}
-  .legend{font-size:11px;color:var(--muted);padding:0 22px 14px;line-height:1.6;}
-  .legend code{background:var(--panel2);padding:1px 5px;border-radius:4px;color:#bcd;}
+  .legend{font-size:11px;color:var(--muted);padding:6px 28px 16px;line-height:1.7;}
+  .legend code{background:#EEF3F9;padding:1px 6px;border-radius:4px;color:var(--slate);}
+  .legend b{color:var(--slate);}
 </style>
 </head>
 <body>
@@ -82,6 +92,7 @@
 <!-- ================= LOGIN ================= -->
 <div id="loginOverlay">
   <div class="login-card">
+    <img src="logo.png" alt="STRIVE" onerror="this.style.display='none'">
     <h1>Quote Pipeline Dashboard</h1>
     <p>Home Maintenance Services · Live from Dynamics 365 &amp; D365 F&amp;O</p>
     <button class="btn" id="signinBtn" onclick="signIn()">Sign in with Microsoft</button>
@@ -91,15 +102,18 @@
 
 <!-- ================= APP ================= -->
 <header>
-  <div>
-    <h2>Quote Pipeline — Home Maintenance Services</h2>
-    <div class="sub">Live extraction: Quote · Opportunity · Work Order · Booking · Activity · Approval · PR (F&amp;O)</div>
+  <div class="brand">
+    <div class="brand-logo"><img src="logo.png" alt="STRIVE" onerror="this.style.display='none';this.parentNode.textContent='S&amp;C';"></div>
+    <div>
+      <h2>Quote Pipeline — Home Maintenance Services</h2>
+      <div class="sub">Live · Quote · Opportunity · Work Order · Booking · Activity · Approval · PR (F&amp;O)</div>
+    </div>
   </div>
   <div class="spacer"></div>
   <span class="pill"><span class="dot" id="statusDot"></span><span id="statusTxt">not signed in</span></span>
   <span class="pill" id="userPill" style="display:none"></span>
-  <button class="btn ghost" onclick="refreshAll()" id="refreshBtn" style="display:none">Refresh</button>
-  <button class="btn ghost" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
+  <button class="hbtn" onclick="refreshAll()" id="refreshBtn" style="display:none">↻ Refresh</button>
+  <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
 </header>
 
 <div class="controls" id="controls" style="display:none">
@@ -126,7 +140,7 @@
 
 <div class="legend" id="legend" style="display:none">
   Live pipeline — one row per quote in the window, joined on <b>Quote No</b>. Durations show as <code>d/h/m</code>; hover any value to see the start → end timestamps.
-  <b>Drafting</b> = opportunity created → PR created (or, when no PR is raised, → internal/markup approval created) · <b>RFQ Process</b> = PR created → RFQ-completion email · <b>Internal Approval</b> = Quote+Markup approval created → modified (when Approved) · <b>Customer Approval</b> = Customer approval created → modified · <b>Work Execution</b> = WO created → booking End Job · <b>Ageing</b> = opportunity created → now.
+  <b>Drafting</b> = opportunity created → PR created (or, when no PR is raised, → internal/markup approval created) · <b>RFQ Process</b> = PR created → RFQ-completion email · <b>Internal Approval</b> = Quote + Markup (Markup Range) approval created → modified (when Approved) · <b>Customer Approval</b> = Customer approval created → modified · <b>Work Execution</b> = WO created → booking End Job · <b>Ageing</b> = opportunity created → now.
 </div>
 
 <div class="wrap" id="wrap" style="display:none">
@@ -329,8 +343,8 @@ async function refreshAll(){
       const prCreated  = pr ? pr.createdDate : '';
       const woCreated  = wo ? wo.createdon : '';
       const endJob     = bk ? bk.endJob : '';
-      const internal   = apprSpan(appr,[2,5]);   // Quote Approval + Markup Approval
-      const customer   = apprSpan(appr,[4]);     // Customer Approval
+      const internal   = apprSpan(appr,[2,5,10]); // Quote Approval + Markup Approval/Markup Range
+      const customer   = apprSpan(appr,[4]);      // Customer Approval
       // Drafting end = PR created; if no PR (quote went straight to internal/markup approval), use that approval's created-on
       const draftEnd   = prCreated || internal.start;
       return {
