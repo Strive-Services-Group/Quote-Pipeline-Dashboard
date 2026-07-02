@@ -41,55 +41,71 @@
   .hbtn{cursor:pointer;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:6px 15px;font-size:12.5px;font-weight:600;transition:.15s;font-family:inherit;}
   .hbtn:hover{background:rgba(255,255,255,.26);}
   /* ---- controls (compact) ---- */
-  .controls{display:flex;align-items:center;gap:12px;padding:9px 30px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap;}
+  .controls{display:flex;align-items:center;gap:12px;padding:6px 30px;background:var(--card);border-bottom:1px solid var(--line);flex-wrap:wrap;}
   .ctrl{display:flex;align-items:center;gap:7px;}
   .ctrl label{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
-  select,input[type=text],input[type=date]{background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:6px 9px;font-size:12.5px;font-family:inherit;}
+  select,input[type=text],input[type=date]{background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:5px 9px;font-size:12.5px;font-family:inherit;}
   input[type=text]{min-width:210px;}
   input:focus,select:focus{outline:none;border-color:var(--steel);box-shadow:0 0 0 3px rgba(97,143,180,.15);}
-  .kpis{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto;}
-  .kpi{background:linear-gradient(180deg,#fff,#fafcfe);border:1px solid var(--line);border-radius:10px;padding:5px 13px;text-align:center;min-width:80px;box-shadow:var(--shadow);}
-  .kpi b{display:block;font-size:16px;color:var(--slate);line-height:1.2;} .kpi span{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
   /* ---- section headings ---- */
   .kpiPanel{padding:13px 30px 2px;}
   .kpiPanel h3{font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--slate);margin:2px 0 11px;font-weight:800;border-left:3px solid var(--steel);padding-left:10px;}
   .cardrow{display:flex;gap:13px;flex-wrap:wrap;}
   /* ---- Resident-360 style bucket cards ---- */
-  .bcard{background:#fff;border:1px solid var(--line);border-radius:13px;overflow:hidden;box-shadow:var(--shadow);min-width:190px;flex:1;display:flex;flex-direction:column;transition:.16s;}
+  .bcard{background:#fff;border:1px solid var(--line);border-radius:15px;overflow:hidden;box-shadow:var(--shadow);min-width:210px;flex:1;display:flex;flex-direction:column;transition:.16s;}
   .bcard:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);}
   .bcard::before{content:'';display:block;height:4px;background:var(--c);}
-  .bcard-head{display:flex;align-items:center;gap:9px;padding:11px 15px 7px;}
-  .bicon{font-size:18px;line-height:1;}
-  .btitle{font-size:13px;font-weight:800;color:var(--c);letter-spacing:.2px;}
-  .bdesc{font-size:10px;color:var(--muted);margin-top:1px;}
-  .brow{display:flex;align-items:center;padding:6px 15px;border-top:1px solid #f1f4f9;}
-  .brow .blbl{font-size:10.5px;color:var(--muted);font-weight:700;white-space:nowrap;margin-right:auto;}
-  .bcol{display:flex;flex-direction:column;align-items:flex-end;min-width:52px;}
-  .bcol b{font-size:13.5px;font-weight:800;color:var(--ink);line-height:1.25;}
-  .bdivider{width:1px;align-self:stretch;background:#EEF2F7;margin:0 10px;}
-  .brow.cur{background:linear-gradient(180deg,#fafcfe,#f3f7fc);}
-  .brow.cur .bcol b{font-size:16px;color:var(--c);}
-  .delta{font-size:9.5px;font-weight:800;white-space:nowrap;line-height:1.3;}
+  /* header row — shorter */
+  .bcard-head{display:flex;align-items:center;gap:11px;padding:10px 16px 6px;}
+  .bicon{width:38px;height:38px;flex:0 0 38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:19px;line-height:1;background:color-mix(in srgb,var(--c) 13%,#fff);}
+  .btitle{font-size:16px;font-weight:800;color:var(--c);letter-spacing:.2px;line-height:1.15;}
+  .bdesc{font-size:10.5px;color:var(--muted);margin-top:2px;}
+  /* colored half horizontal line under header (screenshot 2) */
+  .baccent{height:3px;width:44%;background:var(--c);border-radius:3px;margin:2px 0 2px 16px;}
+  /* week rows — taller */
+  .brow{display:flex;align-items:center;gap:11px;padding:13px 16px;border-top:1px solid #f1f4f9;}
+  .brow:first-of-type{border-top:none;}
+  .brico{width:34px;height:34px;flex:0 0 34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1;}
+  .brow .blbl{font-size:12.5px;color:var(--ink);font-weight:700;white-space:nowrap;margin-right:auto;}
+  .bcol{display:flex;flex-direction:column;align-items:flex-end;min-width:54px;}
+  .bcol b{font-size:20px;font-weight:800;color:var(--slate);line-height:1.15;letter-spacing:-.3px;}
+  .bdivider{width:1px;align-self:stretch;background:#EEF2F7;margin:2px 12px;}
+  .brow.cur{background:linear-gradient(180deg,#f2f7fc,#eaf2fb);}
+  .brow.cur .blbl{color:var(--c);}
+  .brow.cur .bcol b{font-size:23px;color:var(--c);}
+  .delta{display:inline-flex;align-items:center;gap:2px;font-size:11px;font-weight:800;white-space:nowrap;line-height:1.3;margin-top:2px;}
   .delta.pos{color:var(--good);} .delta.neg{color:var(--bad);} .delta.flat{color:#9aa7b5;}
-  /* ---- procurement cards (short) ---- */
-  .tcard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 15px;min-width:150px;flex:1;box-shadow:var(--shadow);border-top:3px solid var(--ocean);transition:.16s;}
+  /* ---- procurement · RFQ performance (screenshot 3) ---- */
+  .procHead{display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,#eef4fb,#f6f9fd);border:1px solid var(--line);border-left:5px solid var(--ocean);border-radius:12px;padding:13px 18px;margin-bottom:14px;}
+  .procHead-ic{width:44px;height:44px;flex:0 0 44px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:21px;background:color-mix(in srgb,var(--ocean) 12%,#fff);}
+  .procHead-t{font-size:16px;font-weight:800;color:var(--slate);letter-spacing:.6px;text-transform:uppercase;}
+  .procHead-s{font-size:11px;font-weight:700;color:var(--steel);letter-spacing:.5px;text-transform:uppercase;margin-top:2px;}
+  .tcard{background:#fff;border:1px solid var(--line);border-radius:13px;padding:0;min-width:220px;flex:1;box-shadow:var(--shadow);border-top:4px solid var(--tc,var(--ocean));display:flex;flex-direction:column;transition:.16s;overflow:hidden;}
   .tcard:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);}
-  .tcard .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700;}
-  .tcard .big{font-size:19px;font-weight:800;color:var(--ocean);margin-top:2px;line-height:1.2;}
-  .tcard .mini{font-size:10px;color:var(--muted);margin-top:3px;}
+  .tcard-top{display:flex;align-items:center;gap:11px;padding:15px 16px 12px;}
+  .tcard-ic{width:34px;height:34px;flex:0 0 34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:color-mix(in srgb,var(--tc,var(--ocean)) 13%,#fff);}
+  .tcard .lbl{font-size:12px;color:var(--tc,var(--slate));text-transform:uppercase;letter-spacing:.6px;font-weight:800;}
+  /* single-value card body */
+  .tcard-body{padding:2px 16px 16px;}
+  .tcard .big{font-size:34px;font-weight:800;color:var(--tc,var(--ocean));line-height:1;letter-spacing:-1px;}
+  .tcard .mini{font-size:11px;color:var(--muted);margin-top:6px;}
   .big.good{color:var(--good);} .big.bad{color:var(--bad);}
-  .tcard.split{padding:0;overflow:hidden;display:flex;flex-direction:column;}
-  .tcard.split .split-head{font-size:10.5px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.4px;padding:9px 12px 7px;border-bottom:1px solid var(--line);}
-  .tcard.split .split-row{display:flex;flex:1;}
-  .tcard.split .seg{flex:1;text-align:center;padding:9px 6px;}
-  .tcard.split .seg+.seg{border-left:1px solid var(--line);}
-  .tcard.split .seg b{display:block;font-size:15px;font-weight:800;color:var(--ocean);line-height:1.2;}
-  .tcard.split .seg span{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
+  /* split (3-metric) card body */
+  .split-row{display:flex;border-top:1px solid var(--line);margin-top:2px;}
+  .split-row .seg{flex:1;text-align:center;padding:12px 6px 14px;}
+  .split-row .seg+.seg{border-left:1px solid var(--line);}
+  .split-row .seg b{display:block;font-size:20px;font-weight:800;color:var(--tc,var(--ocean));line-height:1.1;letter-spacing:-.3px;}
+  .split-row .seg .seglbl{display:flex;align-items:center;justify-content:center;gap:4px;font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-top:6px;}
   /* ---- table ---- */
   .wrap{padding:14px 30px 46px;overflow:auto;}
   table{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px;background:#fff;border:1px solid var(--line);border-radius:13px;overflow:hidden;box-shadow:var(--shadow);}
-  thead th{position:sticky;top:0;background:linear-gradient(135deg,var(--slate),var(--ocean));color:#fff;text-align:left;padding:6px 12px;white-space:nowrap;font-weight:700;border-right:1px solid rgba(255,255,255,.12);}
-  tbody td{padding:8px 12px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);vertical-align:top;}
+  /* total-records count row above the header */
+  thead tr.countrow th{position:sticky;top:0;z-index:3;background:#EAF1F9;color:var(--slate);text-align:left;padding:4px 12px;white-space:nowrap;font-weight:800;font-size:11px;border-right:1px solid #dbe6f2;border-bottom:1px solid #cfe0f0;}
+  thead tr.countrow th .cnum{font-size:12.5px;font-weight:800;color:var(--ocean);}
+  thead tr.countrow th .clbl{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
+  thead tr.headrow th{position:sticky;top:26px;z-index:2;background:linear-gradient(135deg,var(--slate),var(--ocean));color:#fff;text-align:left;padding:6px 12px;white-space:nowrap;font-weight:700;border-right:1px solid rgba(255,255,255,.12);}
+  thead tr.headrow th .thi{margin-right:6px;}
+  tbody td{padding:5px 12px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);vertical-align:middle;}
   tbody tr:nth-child(even){background:#FAFBFD;}
   tbody tr:hover{background:#EEF4FB;}
   .qno a{font-weight:700;color:var(--ocean);text-decoration:none;border-bottom:1px dotted var(--steel);white-space:nowrap;}
@@ -103,6 +119,8 @@
   .tag.markup{background:rgba(232,163,61,.14);border-color:#eccb96;color:#9a6a12;}
   .tag.quote{background:rgba(97,143,180,.14);border-color:#b6cee0;}
   .tag.bad{background:rgba(192,57,43,.10);border-color:#e2a59e;color:#a4332a;}
+  .tag.info{background:rgba(20,90,149,.10);border-color:#b6cee0;color:var(--ocean);}
+  .tag.wait{background:#EDF1F5;border-color:#d7dee7;color:#4a5a6b;}
   .dur{font-weight:700;color:var(--slate);cursor:help;border-bottom:1px dotted #9bb4cb;}
   .nowrap{white-space:nowrap;}
   .small{font-size:11px;}
@@ -148,36 +166,26 @@
     <select id="deptSel" onchange="applyFilter()"><option value="">All Departments</option></select>
   </div>
   <div class="ctrl"><input type="text" id="search" placeholder="Search quote no, project, PR, status…" oninput="render()"></div>
-  <div class="kpis">
-    <div class="kpi"><b id="kQuotes">—</b><span>Quotes</span></div>
-    <div class="kpi"><b id="kWO">—</b><span>Work Orders</span></div>
-    <div class="kpi"><b id="kRFQ">—</b><span>RFQ Emails</span></div>
-    <div class="kpi"><b id="kAppr">—</b><span>Approvals</span></div>
-    <div class="kpi"><b id="kPR">—</b><span>CPR PRs</span></div>
-  </div>
 </div>
 
 <div class="kpiPanel" id="trendKpis" style="display:none"></div>
 <div class="kpiPanel" id="procKpis" style="display:none"></div>
 
-<div class="legend" id="legend" style="display:none">
-  Live pipeline — one row per quote, joined on <b>Quote No</b> (click a Quote No to open it in CRM). Each bucket shows, per week, the <b>count</b> of quotes reaching that stage and their <b>average</b> completion time; the arrow compares the count to the prior week. Durations: hover for start → end.
-  <b>Drafting</b> = opportunity created → RFQ-completion email (or, if none yet, → Internal/Markup approval raised; or, if none, → Customer approval raised — smaller quotes can skip PR/RFQ) · <b>RFQ Process</b> = PR created → RFQ-completion email · <b>Internal Approval</b> = Quote + Markup Range approval created → modified (when Approved) · <b>Customer Approval</b> = Customer approval created → modified · <b>Work Execution</b> = WO created → booking End Job · <b>Ageing</b> = opportunity created → now. The 3-week trend cards always show the current Mon–Sun calendar week and the two before it, independent of the date filter below.
-</div>
-
 <div class="wrap" id="wrap" style="display:none">
   <table id="tbl">
     <thead>
-      <tr>
-        <th>Quote No</th>
-        <th>Created Date &amp; Time<br><span class="small muted">(parent opportunity)</span></th>
-        <th>Drafting Time<br><span class="small muted">created → RFQ / Internal / Customer</span></th>
-        <th>RFQ Process Time<br><span class="small muted">PR created → RFQ email</span></th>
-        <th>Internal Approval Time<br><span class="small muted">Quote+Markup</span></th>
-        <th>Customer Approval Time</th>
-        <th>Work Execution Time<br><span class="small muted">WO created → End Job</span></th>
-        <th>Total Job Ageing yet</th>
-        <th>Quote Current Status</th>
+      <tr class="countrow" id="countRow"></tr>
+      <tr class="headrow">
+        <th><span class="thi">📄</span>Quote No</th>
+        <th><span class="thi">📅</span>Created Date &amp; Time<br><span class="small muted">(parent opportunity)</span></th>
+        <th><span class="thi">📑</span>Quote Type</th>
+        <th><span class="thi">✍️</span>Drafting Time<br><span class="small muted">created → RFQ / Internal / Customer</span></th>
+        <th><span class="thi">✉️</span>RFQ Process Time<br><span class="small muted">PR created → RFQ email</span></th>
+        <th><span class="thi">👤</span>Internal Approval Time<br><span class="small muted">Quote-Markup</span></th>
+        <th><span class="thi">✅</span>Customer Approval Time</th>
+        <th><span class="thi">🔧</span>Work Execution Time<br><span class="small muted">WO created → End Job</span></th>
+        <th><span class="thi">🕐</span>Total Job Ageing yet</th>
+        <th><span class="thi">🚩</span>Quote Current Status</th>
       </tr>
     </thead>
     <tbody id="tbody"></tbody>
@@ -209,6 +217,25 @@ let msalInstance = null, account = null, crmToken = null, refreshTimer = null;
 let DATA = [];
 let TREND_DATA = [];
 let WEEK_BOUNDS = [];
+let PR_ROWS = [];          // CPR PR records for the current table range (drives RFQ Performance)
+let EMAIL_BY_Q = {};       // quoteNo -> earliest RFQ-completion email time
+
+// Logical name of the live-table "Quote Type" column. Auto-detected on first load
+// (most orgs: ssg_quotetype). Hard-set here if you know it to skip detection.
+let QUOTE_TYPE_FIELD = '';
+let QT_DETECTED = false;
+async function detectQuoteTypeField(){
+  QT_DETECTED = true;
+  try{
+    const one = await dvGet('quotes?$top=1');
+    if(one && one.length){
+      const k = Object.keys(one[0]);
+      let f = k.find(x=>/quote.?type$/i.test(x) && !x.includes('@'));
+      if(!f) f = k.find(x=>/^ssg_.*type$/i.test(x) && !x.includes('@') && ((x+F) in one[0]));
+      if(f) QUOTE_TYPE_FIELD = f;
+    }
+  }catch(e){ /* leave blank -> column shows — */ }
+}
 
 function quoteUrl(id){ return CRM_ORG + '/main.aspx?pagetype=entityrecord&etn=quote&id=' + id; }
 
@@ -248,7 +275,7 @@ function setDefaultDates(){
 
 async function enterApp(){
   document.getElementById('loginOverlay').classList.add('hidden');
-  ['controls','trendKpis','procKpis','wrap','legend'].forEach(id=>document.getElementById(id).style.display='');
+  ['controls','trendKpis','procKpis','wrap'].forEach(id=>document.getElementById(id).style.display='');
   ['refreshBtn','signoutBtn'].forEach(id=>document.getElementById(id).style.display='');
   const up=document.getElementById('userPill'); up.style.display=''; up.textContent = account.name || account.username || 'Signed in';
   setDefaultDates();
@@ -304,9 +331,10 @@ function apprSpan(recs, typeVals){
 async function fetchAndJoin(fromISO, toISO){
   const rng = "createdon ge "+fromISO+" and createdon le "+toISO;
 
+  const qtSel = QUOTE_TYPE_FIELD ? (','+QUOTE_TYPE_FIELD) : '';
   // All six sources fetched CONCURRENTLY
   const [quotes, emails, approvals, wos, bookings, prJson] = await Promise.all([
-    dvGet("quotes?$select=quoteid,quotenumber,createdon,statuscode,name,_opportunityid_value"
+    dvGet("quotes?$select=quoteid,quotenumber,createdon,statuscode,name,_opportunityid_value"+qtSel
       + "&$expand=opportunityid($select=createdon,name,ssg_textdepartment)"
       + "&$filter="+encodeURIComponent(rng)),
     dvGet("emails?$select=subject,createdon,_regardingobjectid_value"
@@ -363,8 +391,9 @@ async function fetchAndJoin(fromISO, toISO){
     const customer   = apprSpan(appr,[4]);
     const draftEnd   = rfqEmail || internal.start || customer.start;
     const dept = (opp.ssg_textdepartment||'').trim() || (wo?(wo['_ssg_department_value'+F]||''):'') || (pr?(pr.department||''):'') || '';
+    const quoteType = QUOTE_TYPE_FIELD ? (q[QUOTE_TYPE_FIELD+F] || q[QUOTE_TYPE_FIELD] || '') : '';
     return {
-      quoteNo: qn, quoteId: q.quoteid, createdDateTime: oppCreated,
+      quoteNo: qn, quoteId: q.quoteid, createdDateTime: oppCreated, quoteType: quoteType,
       drafting:  { val: dur(oppCreated, draftEnd), ms: durMs(oppCreated, draftEnd), a:oppCreated, b:draftEnd },
       rfq:       { val: dur(prCreated, rfqEmail),   ms: durMs(prCreated, rfqEmail), a:prCreated,  b:rfqEmail  },
       internal, customer,
@@ -378,7 +407,8 @@ async function fetchAndJoin(fromISO, toISO){
     };
   });
 
-  return { rows, counts: { quotes: quotes.length, wo: Object.keys(woByQ).length, rfq: Object.keys(emailByQ).length, appr: approvals.length, pr: prRows.length } };
+  return { rows, prRows, emailByQ,
+    counts: { quotes: quotes.length, wo: Object.keys(woByQ).length, rfq: Object.keys(emailByQ).length, appr: approvals.length, pr: prRows.length } };
 }
 
 /* ============================ IN-MEMORY CACHE (instant re-loads on filter changes) ============================ */
@@ -400,6 +430,7 @@ async function refreshAll(force){
   setStatus('syncing…','warn');
   try{
     crmToken = await getToken();
+    if(!QT_DETECTED) await detectQuoteTypeField();
     setDefaultDates();
     const fromISO = new Date(document.getElementById('fromDate').value + 'T00:00:00').toISOString();
     const toISO   = new Date(document.getElementById('toDate').value   + 'T23:59:59').toISOString();
@@ -418,14 +449,10 @@ async function refreshAll(force){
 
     DATA = tableRes.rows.sort((a,b)=> new Date(b.createdDateTime||b._quoteCreated) - new Date(a.createdDateTime||a._quoteCreated));
     TREND_DATA = trendRes.rows;
+    PR_ROWS = tableRes.prRows || [];
+    EMAIL_BY_Q = tableRes.emailByQ || {};
 
     populateDepts();
-    document.getElementById('kQuotes').textContent = tableRes.counts.quotes.toLocaleString();
-    document.getElementById('kWO').textContent = tableRes.counts.wo.toLocaleString();
-    document.getElementById('kRFQ').textContent = tableRes.counts.rfq.toLocaleString();
-    document.getElementById('kAppr').textContent = tableRes.counts.appr.toLocaleString();
-    document.getElementById('kPR').textContent = tableRes.counts.pr.toLocaleString();
-
     render(); renderKpis();
     setStatus('live · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), 'live');
   }catch(e){
@@ -462,7 +489,11 @@ function apprCell(o,skipped){ if(!o || !o.status) return skipped ? SKIP : '<span
   const badge='<span class="tag '+statusCls(o.status)+'">'+escapeHtml(o.status)+'</span>';
   if(o.val) return '<span class="dur" title="'+escapeHtml(fmt(o.start)+'  →  '+fmt(o.end))+'">'+o.val+'</span> '+badge;
   return badge; }
-function mainStatusCls(s){ return /posted\s*work\s*orders?/i.test(s||'') ? 'cust' : ''; }
+function mainStatusCls(s){ s=(s||'').toLowerCase();
+  if(/lost|cancel|reject/.test(s)) return 'bad';
+  if(/in\s*progress|progress|draft/.test(s)) return 'wait';
+  if(/posted\s*work\s*orders?/.test(s)) return 'cust';
+  return 'info'; }
 
 // A stage is only "Skipped" (vs. still blank/in-progress) when a LATER stage in the pipeline already has
 // data — proof the quote moved on without ever populating this one (e.g. no PR/RFQ needed for a small quote).
@@ -483,6 +514,7 @@ function render(){
     <tr>
       <td class="qno">${ r.quoteId ? '<a href="'+quoteUrl(r.quoteId)+'" target="_blank" rel="noopener">'+escapeHtml(r.quoteNo)+'</a>' : escapeHtml(r.quoteNo) }</td>
       <td>${dcell(r.createdDateTime)}</td>
+      <td>${ r.quoteType ? '<span class="tag quote">'+escapeHtml(r.quoteType)+'</span>' : '<span class="none">—</span>' }</td>
       <td>${durCell(r.drafting,sk[0])}</td>
       <td>${durCell(r.rfq,sk[1])}</td>
       <td>${apprCell(r.internal,sk[2])}</td>
@@ -492,6 +524,29 @@ function render(){
       <td>${ r.status ? '<span class="tag '+mainStatusCls(r.status)+'">'+escapeHtml(r.status)+'</span>' : '<span class="none">—</span>' }</td>
     </tr>`;
   }).join('');
+  renderCountRow(rows);
+}
+
+// Total-records counts shown above the header row — per column, how many visible rows carry a value.
+function renderCountRow(rows){
+  const n = rows.length;
+  const c = {
+    qn:   rows.filter(r=>r.quoteNo).length,
+    cr:   rows.filter(r=>r.createdDateTime).length,
+    qt:   rows.filter(r=>r.quoteType).length,
+    dr:   rows.filter(r=>r.drafting && r.drafting.val!=null).length,
+    rfq:  rows.filter(r=>r.rfq && r.rfq.val!=null).length,
+    ia:   rows.filter(r=>r.internal && r.internal.status).length,
+    ca:   rows.filter(r=>r.customer && r.customer.status).length,
+    we:   rows.filter(r=>r.workExec && r.workExec.val!=null).length,
+    ag:   rows.filter(r=>r.ageingMs!=null).length,
+    st:   rows.filter(r=>r.status).length
+  };
+  const cell = (v,lbl)=>'<th><span class="cnum">'+v+'</span> <span class="clbl">'+lbl+'</span></th>';
+  document.getElementById('countRow').innerHTML =
+      cell(n,'quotes') + cell(c.cr,'dated') + cell(c.qt,'typed') + cell(c.dr,'drafted')
+    + cell(c.rfq,'rfq') + cell(c.ia,'internal') + cell(c.ca,'customer') + cell(c.we,'executed')
+    + cell(c.ag,'ageing') + cell(c.st,'status');
 }
 
 /* ============================ BUCKET KPIs (count + average, 3-week) ============================ */
@@ -544,10 +599,18 @@ function renderKpis(){
   }).join('');
   document.getElementById('trendKpis').innerHTML =
     '<h3>3-Week Trend · Mon–Sun calendar weeks · count &amp; avg time — independent of the date filter above</h3><div class="cardrow">'+cards+'</div>';
-  renderProc(activeRows());
+  renderProc();
 }
+const ROW_META = [
+  {lbl:'Last Two Week', i:2, ic:'📅', tint:'#3F72C4'},
+  {lbl:'Last Week',     i:1, ic:'📅', tint:'#2E8B57'},
+  {lbl:'Current Week',  i:0, ic:'📊', tint:'', cur:true}
+];
 function bucketCard(m,cnt,av,wb){
-  const row=(lbl,i,isCur)=>{
+  const row=(meta)=>{
+    const i=meta.i, isCur=!!meta.cur;
+    const tint = meta.tint || m.c;
+    const badge = '<span class="brico" style="background:color-mix(in srgb,'+tint+' 14%,#fff)">'+meta.ic+'</span>';
     const cntDelta = i<2 ? deltaCount(cnt[i],cnt[i+1]) : '';
     const cntCol = '<span class="bcol"><b>'+cnt[i].toLocaleString()+'</b>'+cntDelta+'</span>';
     let avgBlock = '';
@@ -555,40 +618,65 @@ function bucketCard(m,cnt,av,wb){
       const avgDelta = i<2 ? deltaDur(av[i],av[i+1]) : '';
       avgBlock = '<span class="bdivider"></span><span class="bcol"><b>'+(av[i]!=null?fmtDurMs(av[i]):'—')+'</b>'+avgDelta+'</span>';
     }
-    return '<div class="brow'+(isCur?' cur':'')+'" title="'+escapeHtml(fmtRange(wb[i]))+'"><span class="blbl">'+lbl+'</span>'
-      + cntCol + avgBlock + '</div>';
+    return '<div class="brow'+(isCur?' cur':'')+'" title="'+escapeHtml(fmtRange(wb[i]))+'">'
+      + badge + '<span class="blbl">'+meta.lbl+'</span>' + cntCol + avgBlock + '</div>';
   };
   return '<div class="bcard" style="--c:'+m.c+'">'
     + '<div class="bcard-head"><span class="bicon">'+m.icon+'</span><div><div class="btitle">'+m.label+'</div><div class="bdesc">'+m.desc+'</div></div></div>'
-    + row('Last Two Week',2,false) + row('Last Week',1,false) + row('Current Week',0,true)
+    + '<div class="baccent"></div>'
+    + ROW_META.map(row).join('')
     + '</div>';
 }
 
-function renderProc(rows){
-  const withPR = rows.filter(r=> r.rfq && r.rfq.a);          // has a PR => an RFQ was required
-  const done   = withPR.filter(r=> r.rfq.ms!=null);           // RFQ-completion email received
-  const pending= withPR.filter(r=> r.rfq.ms==null);           // PR raised, no RFQ email found in Activity yet
-  const under6 = done.filter(r=> r.rfq.ms<=RFQ_THRESHOLD_MS);
-  const over6  = done.filter(r=> r.rfq.ms>RFQ_THRESHOLD_MS);
-  const total  = withPR.length;
-  const pct    = n => total ? Math.round(n/total*100) : 0;
+function renderProc(){
+  // Driven straight off the CPR records in the PR table (respects the dept filter via pr.department).
+  const dept = document.getElementById('deptSel').value;
+  const prs = (dept ? PR_ROWS.filter(p=>(p.department||'')===dept) : PR_ROWS);
+  const now = Date.now();
 
-  const single=(lbl,big,sub,cls)=> '<div class="tcard"><div class="lbl">'+lbl+'</div><div class="big '+(cls||'')+'">'+big+'</div>'+(sub?'<div class="mini">'+sub+'</div>':'')+'</div>';
-  const split=(title,list)=>{
-    const avgMs = avg(list.map(r=>r.rfq.ms));
-    return '<div class="tcard split"><div class="split-head">'+title+'</div><div class="split-row">'
-      + '<div class="seg"><b>'+list.length+'</b><span>Count</span></div>'
-      + '<div class="seg"><b>'+(avgMs!=null?fmtDurMs(avgMs):'—')+'</b><span>Avg Age</span></div>'
-      + '<div class="seg"><b>'+pct(list.length)+'%</b><span>of total</span></div>'
+  const recs = prs.map(p=>{
+    const qn = p.quotationReference;
+    const emailT = qn ? EMAIL_BY_Q[qn] : null;
+    const rfqMs  = emailT ? durMs(p.createdDate, emailT) : null;   // PR created -> RFQ completion email
+    const waitMs = p.createdDate ? Math.max(0, now - ms(p.createdDate)) : null; // how long pending
+    return { rfqMs, waitMs, done: rfqMs!=null };
+  });
+
+  const done    = recs.filter(r=>r.done);
+  const pending = recs.filter(r=>!r.done);
+  const under6  = done.filter(r=> r.rfqMs<=RFQ_THRESHOLD_MS);
+  const over6   = done.filter(r=> r.rfqMs>RFQ_THRESHOLD_MS);
+  const total   = recs.length;
+  const pct     = n => total ? Math.round(n/total*100) : 0;
+  const pendAvg = avg(pending.map(r=>r.waitMs).filter(x=>x!=null));
+
+  const single=(color,ic,lbl,big,sub,cls)=>
+    '<div class="tcard" style="--tc:'+color+'">'
+    + '<div class="tcard-top"><span class="tcard-ic">'+ic+'</span><span class="lbl">'+lbl+'</span></div>'
+    + '<div class="tcard-body"><div class="big '+(cls||'')+'">'+big+'</div>'+(sub?'<div class="mini">'+sub+'</div>':'')+'</div>'
+    + '</div>';
+  const split=(color,ic,title,list)=>{
+    const avgMs = avg(list.map(r=>r.rfqMs));
+    return '<div class="tcard" style="--tc:'+color+'">'
+      + '<div class="tcard-top"><span class="tcard-ic">'+ic+'</span><span class="lbl">'+title+'</span></div>'
+      + '<div class="split-row">'
+      + '<div class="seg"><b>'+list.length+'</b><span class="seglbl">👥 Count</span></div>'
+      + '<div class="seg"><b>'+(avgMs!=null?fmtDurMs(avgMs):'—')+'</b><span class="seglbl">🕐 Avg Age</span></div>'
+      + '<div class="seg"><b>'+pct(list.length)+'%</b><span class="seglbl">◔ of total</span></div>'
       + '</div></div>';
   };
 
   document.getElementById('procKpis').innerHTML =
-    '<h3>Procurement · RFQ Performance — PR created → RFQ completion (6h benchmark)</h3><div class="cardrow">'
-    + single('Total RFQ', String(total), 'CPR PRs requiring RFQ')
-    + split('Completed &lt; 6h', under6)
-    + split('Completed &gt; 6h', over6)
-    + single('Pending RFQ', String(pending.length), 'PR raised, RFQ email not found', pending.length>0?'bad':'good')
+      '<div class="procHead"><span class="procHead-ic">📋</span>'
+    + '<div><div class="procHead-t">Procurement · RFQ Performance</div>'
+    + '<div class="procHead-s">PR created → RFQ completion (6h benchmark)</div></div></div>'
+    + '<div class="cardrow">'
+    + single('#145A95','📄','Total RFQ', String(total), 'CPR PRs requiring RFQ')
+    + split('#2E8B57','✅','Completed &lt; 6h', under6)
+    + split('#145A95','⏱️','Completed &gt; 6h', over6)
+    + single('#C0392B','✉️','Pending RFQ', String(pending.length),
+        'PR raised, RFQ email not found · avg wait '+(pendAvg!=null?fmtDurMs(pendAvg):'—'),
+        pending.length>0?'bad':'good')
     + '</div>';
 }
 
