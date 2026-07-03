@@ -327,7 +327,7 @@ async function signIn(){
   const err=document.getElementById('loginErr'); err.style.display='none';
   try{
     await initMsal();
-    if(!account){ const r = await msalInstance.loginPopup({ scopes:['User.Read', CRM_SCOPE] }); account = r.account; }
+    if(!account){ await msalInstance.loginRedirect({ scopes:['User.Read', CRM_SCOPE] }); return; } // full-page redirect, no popup
     await enterApp();
   }catch(e){ err.textContent = e.message || String(e); err.style.display='block'; }
 }
@@ -335,7 +335,7 @@ async function signIn(){
 async function getToken(){
   const req = { scopes:[CRM_SCOPE], account };
   try{ const r = await msalInstance.acquireTokenSilent(req); return r.accessToken; }
-  catch(e){ const r = await msalInstance.acquireTokenPopup(req); return r.accessToken; }
+  catch(e){ await msalInstance.acquireTokenRedirect(req); return null; } // silent failed → re-auth via redirect (no popup)
 }
 
 function setDefaultDates(){
@@ -355,7 +355,7 @@ async function enterApp(){
   refreshTimer = setInterval(()=>refreshAll(true).catch(()=>{}), 5*60*1000);
 }
 
-function signOut(){ try{ msalInstance.logoutPopup(); }catch(e){} location.reload(); }
+function signOut(){ try{ msalInstance.logoutRedirect(); }catch(e){ location.reload(); } }
 
 async function dvGet(path){
   const token = crmToken;
