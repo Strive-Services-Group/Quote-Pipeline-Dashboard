@@ -225,7 +225,7 @@
     <div class="brand-logo"><img src="logo.png" alt="STRIVE" onerror="this.style.display='none';this.parentNode.textContent='S&amp;C';"></div>
     <div>
       <h2>Quote Pipeline Ageing Dashboard</h2>
-      <div class="sub">Home Maintenance Services · Live from Dynamics 365 &amp; D365 F&amp;O · build&nbsp;v15</div>
+      <div class="sub">Home Maintenance Services · Live from Dynamics 365 &amp; D365 F&amp;O · build&nbsp;v16</div>
     </div>
   </div>
   <div class="spacer"></div>
@@ -794,6 +794,7 @@ function renderProc(){
 
 /* ============================ DRILL-THROUGH ============================ */
 function quoteIdOf(qn){ const r = DATA.find(x=>x.quoteNo===qn) || TREND_DATA.find(x=>x.quoteNo===qn); return r?r.quoteId:null; }
+function quoteStatusOf(qn){ const r = DATA.find(x=>x.quoteNo===qn) || TREND_DATA.find(x=>x.quoteNo===qn); return r?r.status:''; }
 function qlink(r){ return r.quoteId ? '<a class="drill-q" href="'+quoteUrl(r.quoteId)+'" target="_blank" rel="noopener">'+escapeHtml(r.quoteNo)+'</a>' : escapeHtml(r.quoteNo); }
 function qlinkNo(qn){ const id=quoteIdOf(qn); return id ? '<a class="drill-q" href="'+quoteUrl(id)+'" target="_blank" rel="noopener">'+escapeHtml(qn)+'</a>' : escapeHtml(qn||'—'); }
 function closeDrill(){ document.getElementById('drillModal').classList.remove('show'); }
@@ -836,10 +837,14 @@ function drillRfq(cat){
   else if(cat==='over6'){ list = recs.filter(r=>r.done && r.rfqMs>RFQ_THRESHOLD_MS); label='Completed > 6h'; }
   else if(cat==='pending'){ list = recs.filter(r=>!r.done); label='Pending RFQ'; }
   list = list.slice().sort((a,b)=> ((b.done?b.rfqMs:b.waitMs)||0) - ((a.done?a.rfqMs:a.waitMs)||0));
-  openDrill(label+' — PR created → RFQ completion', ['PR No','PR Name','Quote No','PR Created','RFQ Email','Time'],
-    list.map(x=>[ escapeHtml(x.p.purchaseRequisition||'—'), escapeHtml(x.p.name||x.p.description||x.p.title||'—'), qlinkNo(x.qn), fmt(x.p.createdDate)||'—',
-      x.done ? fmt(x.emailT) : '<span class="drill-ongoing">not received</span>',
-      '<b>'+(x.done ? fmtDurMs(x.rfqMs) : (x.waitMs!=null?fmtDurMs(x.waitMs):'—'))+'</b>' ]));
+  openDrill(label+' — PR created → RFQ completion', ['PR No','PR Name','Quote No','PR Created','RFQ Email','Time','CRM RFQ'],
+    list.map(x=>{
+      const st = quoteStatusOf(x.qn);
+      const crm = /sent\s*for\s*rfq/i.test(st) ? tintTag('Open','#E8A33D') : tintTag('Closed','#64748B');
+      return [ escapeHtml(x.p.purchaseRequisition||'—'), escapeHtml(x.p.name||x.p.description||x.p.title||'—'), qlinkNo(x.qn), fmt(x.p.createdDate)||'—',
+        x.done ? fmt(x.emailT) : '<span class="drill-ongoing">not received</span>',
+        '<b>'+(x.done ? fmtDurMs(x.rfqMs) : (x.waitMs!=null?fmtDurMs(x.waitMs):'—'))+'</b>', crm ];
+    }));
 }
 
 /* ---- Race-Control splash: falling rain lines + dismiss ---- */
