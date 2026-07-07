@@ -120,6 +120,7 @@
   .tag.info{background:rgba(20,90,149,.10);border-color:#b6cee0;color:var(--ocean);}
   .tag.wait{background:#EDF1F5;border-color:#d7dee7;color:#4a5a6b;}
   .dur{font-weight:700;color:var(--slate);cursor:help;border-bottom:1px dotted #9bb4cb;}
+  .estlbl{display:inline-block;min-width:30px;font-size:9.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;}
   .nowrap{white-space:nowrap;}
   .small{font-size:11px;}
   #emptyMsg{padding:40px;text-align:center;color:var(--muted);}
@@ -235,7 +236,7 @@
   <span class="pill" id="userPill" style="display:none"></span>
   <button class="hbtn" onclick="refreshAll(true)" id="refreshBtn" style="display:none">↻ Refresh</button>
   <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
-  <span class="ver">v20</span>
+  <span class="ver">v21</span>
 </header>
 <div class="controls" id="controls" style="display:none">
   <div class="ctrl"><label>From</label><input type="date" id="fromDate" onchange="refreshAll()"></div>
@@ -256,6 +257,7 @@
         <th><span class="thi">📅</span>Created Date &amp; Time<br><span class="small muted">(parent opportunity)</span></th>
         <th><span class="thi">📑</span>Quote Type</th>
         <th><span class="thi">✍️</span>Drafting Time<br><span class="small muted">created → RFQ / Internal / Customer</span></th>
+        <th><span class="thi">📝</span>Estimation Without PR<br>Approval Time<br><span class="small muted">Procurement · Operations</span></th>
         <th><span class="thi">✉️</span>RFQ Process Time<br><span class="small muted">PR created → RFQ email</span></th>
         <th><span class="thi">👤</span>Internal Approval Time<br><span class="small muted">Quote-Markup</span></th>
         <th><span class="thi">✅</span>Customer Approval Time</th>
@@ -455,6 +457,18 @@ async function fetchAndJoin(fromISO, toISO){
     const endJob     = bk ? bk.endJob : '';
     const internal   = apprSpan(appr,[2,5,10]);
     const customer   = apprSpan(appr,[4]);
+    // "Estimation without PR" approvals (type 13) — split by approver role.
+    const estRecs = appr.filter(a=>a.typeVal===13);
+    const estRole = (re)=>{
+      const rs = estRecs.filter(a=> re.test(a.approver||''));
+      if(!rs.length) return null;
+      const rec = rs.slice().sort((a,b)=> (ms(b.created)||0)-(ms(a.created)||0))[0]; // latest per role
+      const end = (rec.statusVal===3 || rec.statusVal===4) ? (rec.actionDate||rec.modified) : null;
+      return { status:rec.status||'', statusVal:rec.statusVal, start:rec.created, end, ms:durMs(rec.created,end), val:dur(rec.created,end) };
+    };
+    const estProc = estRole(/procurement/i);
+    const estOps  = estRole(/operation/i);
+    const estOther = (!estProc && !estOps && estRecs.length) ? estRole(/./) : null;
     const dept = (opp.ssg_textdepartment||'').trim() || (wo?(wo['_ssg_department_value'+F]||''):'') || (pr?(pr.department||''):'') || '';
     const quoteType = QUOTE_TYPE_FIELD ? (q[QUOTE_TYPE_FIELD+F] || q[QUOTE_TYPE_FIELD] || '') : '';
     // Drafting ends when the quote first leaves drafting. Inspection quotes have no PR/RFQ/approval —
@@ -478,6 +492,7 @@ async function fetchAndJoin(fromISO, toISO){
       quoteNo: qn, quoteId: q.quoteid, createdDateTime: oppCreated, quoteType: quoteType,
       drafting:  { val: dur(oppCreated, draftEnd), ms: durMs(oppCreated, draftEnd), a:oppCreated, b:draftEnd },
       rfq:       { val: dur(prCreated, rfqEmail),   ms: durMs(prCreated, rfqEmail), a:prCreated,  b:rfqEmail  },
+      est:       { proc:estProc, ops:estOps, other:estOther, any:estRecs.length>0 },
       internal, customer,
       workExec:  { val: dur(woCreated, endJob),     ms: durMs(woCreated, endJob),   a:woCreated,  b:endJob    },
       ageing:    ageMs!=null ? Math.floor(ageMs/864e5) : null,
@@ -485,7 +500,8 @@ async function fetchAndJoin(fromISO, toISO){
       status:    statusLabel,
       dept:      dept,
       _name: q.name||'', _prNo: pr?pr.purchaseRequisition:'', _prLoc: pr?(pr.location||pr.projectId):'',
-      _woName: wo?wo.msdyn_name:'', _quoteCreated:q.createdon
+      _woName: wo?wo.msdyn_name:'', _quoteCreated:q.createdon,
+      _endJob: endJob, _finalDone: finalDone
     };
   });
   return { rows, prRows, emailByQ,
@@ -575,8 +591,18 @@ function quoteTypeColor(t){ t=(t||'').toLowerCase();
 function tintTag(txt,color){ return '<span class="tag" style="color:'+color+';background:'+color+'1A;border-color:'+color+'59">'+escapeHtml(txt)+'</span>'; }
 
 function stageFlags(r){
-  const has=[ r.drafting.val!=null, r.rfq.val!=null, !!(r.internal&&r.internal.status), !!(r.customer&&r.customer.status), r.workExec.val!=null ];
+  const has=[ r.drafting.val!=null, !!(r.est&&r.est.any), r.rfq.val!=null, !!(r.internal&&r.internal.status), !!(r.customer&&r.customer.status), r.workExec.val!=null ];
   return has.map((h,i)=> h ? false : has.slice(i+1).some(Boolean));
+}
+// "Estimation Without PR" cell — one row per approver role (Procurement / Operations)
+function estCell(e,skipped){
+  if(!e || !e.any) return skipped ? SKIP : '<span class="none">—</span>';
+  const part=(lbl,o)=>{ if(!o) return '';
+    const cls = o.statusVal===3 ? 'cust' : (o.statusVal===4 ? 'bad' : 'markup');
+    const badge='<span class="tag '+cls+'">'+escapeHtml(o.status)+'</span>';
+    const t=o.val?'<span class="dur" title="'+escapeHtml(fmt(o.start)+'  →  '+fmt(o.end))+'">'+o.val+'</span> ':'';
+    return '<div class="nowrap"><span class="estlbl">'+lbl+'</span> '+t+badge+'</div>'; };
+  return part('Proc',e.proc)+part('Ops',e.ops)+part('Appr',e.other);
 }
 
 function render(){
@@ -593,11 +619,16 @@ function render(){
       <td>${dcell(r.createdDateTime)}</td>
       <td>${ r.quoteType ? tintTag(r.quoteType, quoteTypeColor(r.quoteType)) : '<span class="none">—</span>' }</td>
       <td>${durCell(r.drafting,sk[0])}</td>
-      <td>${durCell(r.rfq,sk[1])}</td>
-      <td>${apprCell(r.internal,sk[2])}</td>
-      <td>${apprCell(r.customer,sk[3])}</td>
-      <td>${durCell(r.workExec,sk[4])}</td>
-      <td>${ r.ageingMs!=null ? '<span class="nowrap">'+fmtDaysHrs(r.ageingMs)+'</span>' : '<span class="none">—</span>' }</td>
+      <td>${estCell(r.est,sk[1])}</td>
+      <td>${durCell(r.rfq,sk[2])}</td>
+      <td>${apprCell(r.internal,sk[3])}</td>
+      <td>${apprCell(r.customer,sk[4])}</td>
+      <td>${durCell(r.workExec,sk[5])}</td>
+      <td>${ r.ageingMs!=null
+            ? ((r._finalDone && r._endJob)
+                ? '<b class="nowrap">'+fmtDaysHrs(r.ageingMs)+'</b><br><b class="small nowrap" title="End Job">'+fmt(r._endJob)+'</b>'
+                : '<span class="nowrap">'+fmtDaysHrs(r.ageingMs)+'</span>')
+            : '<span class="none">—</span>' }</td>
       <td>${ r.status ? tintTag(r.status, statusColor(r.status)) : '<span class="none">—</span>' }</td>
     </tr>`;
   }).join('');
@@ -615,7 +646,8 @@ function renderCountRow(rows){
     ca:   rows.filter(r=>r.customer && r.customer.status).length,
     we:   rows.filter(r=>r.workExec && r.workExec.val!=null).length,
     ag:   rows.filter(r=>r.ageingMs!=null).length,
-    st:   rows.filter(r=>r.status).length
+    st:   rows.filter(r=>r.status).length,
+    est:  rows.filter(r=>r.est && r.est.any).length
   };
   const cell = (v,lbl)=>'<th><span class="cnum">'+v+'</span> <span class="clbl">'+lbl+'</span></th>';
   const blank = '<th></th>';
@@ -627,6 +659,7 @@ function renderCountRow(rows){
     + blank                 /* Created Date */
     + typeCell              /* Quote Type */
     + cell(c.dr,'drafted')  /* Drafting */
+    + cell(c.est,'est appr')/* Estimation Without PR */
     + cell(c.rfq,'rfq')     /* RFQ Process */
     + cell(c.ia,'internal') /* Internal Approval */
     + cell(c.ca,'customer') /* Customer Approval */
@@ -746,13 +779,15 @@ function rfqRecs(){
     const raw = (done && p.createdDate) ? (ms(emailT) - ms(p.createdDate)) : null;
     const rfqMs = done ? Math.max(0, raw!=null ? raw : 0) : null;  // clamp anomalies (email logged before PR) to 0
     const waitMs = p.createdDate ? Math.max(0, now - ms(p.createdDate)) : null;
-    return { p, qn, emailT, rfqMs, waitMs, done };
+    // PRs that are Closed / Cancelled / Rejected will never get an RFQ — keep them out of "Pending"
+    const dead = !done && /clos|cancel|reject/i.test(String(p.status||''));
+    return { p, qn, emailT, rfqMs, waitMs, done, dead };
   });
 }
 function renderProc(){
   const recs = rfqRecs();
   const done    = recs.filter(r=>r.done);
-  const pending = recs.filter(r=>!r.done);
+  const pending = recs.filter(r=>!r.done && !r.dead);
   const under6  = done.filter(r=> r.rfqMs<=RFQ_THRESHOLD_MS);
   const over6   = done.filter(r=> r.rfqMs>RFQ_THRESHOLD_MS);
   const total   = recs.length;
@@ -837,13 +872,13 @@ function drillRfq(cat){
   let list = recs, label = 'Total RFQ';
   if(cat==='under6'){ list = recs.filter(r=>r.done && r.rfqMs<=RFQ_THRESHOLD_MS); label='Completed < 6h'; }
   else if(cat==='over6'){ list = recs.filter(r=>r.done && r.rfqMs>RFQ_THRESHOLD_MS); label='Completed > 6h'; }
-  else if(cat==='pending'){ list = recs.filter(r=>!r.done); label='Pending RFQ'; }
+  else if(cat==='pending'){ list = recs.filter(r=>!r.done && !r.dead); label='Pending RFQ'; }
   list = list.slice().sort((a,b)=> ((b.done?b.rfqMs:b.waitMs)||0) - ((a.done?a.rfqMs:a.waitMs)||0));
-  openDrill(label+' — PR created → RFQ completion', ['PR No','PR Name','Quote No','PR Created','RFQ Email','Time','CRM RFQ'],
+  openDrill(label+' — PR created → RFQ completion', ['PR No','PR Name','Project','Quote No','PR Created','RFQ Email','Time','CRM RFQ'],
     list.map(x=>{
       const st = quoteStatusOf(x.qn);
       const crm = /sent\s*for\s*rfq/i.test(st) ? tintTag('Open','#E8A33D') : tintTag('Closed','#64748B');
-      return [ escapeHtml(x.p.purchaseRequisition||'—'), escapeHtml(x.p.name||x.p.description||x.p.title||'—'), qlinkNo(x.qn), fmt(x.p.createdDate)||'—',
+      return [ escapeHtml(x.p.purchaseRequisition||'—'), escapeHtml(x.p.name||x.p.description||x.p.title||'—'), escapeHtml(x.p.projectId||x.p.location||'—'), qlinkNo(x.qn), fmt(x.p.createdDate)||'—',
         x.done ? fmt(x.emailT) : '<span class="drill-ongoing">not received</span>',
         '<b>'+(x.done ? fmtDurMs(x.rfqMs) : (x.waitMs!=null?fmtDurMs(x.waitMs):'—'))+'</b>', crm ];
     }));
