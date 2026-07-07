@@ -463,7 +463,7 @@ async function fetchAndJoin(fromISO, toISO){
       const rs = estRecs.filter(a=> re.test(a.approver||''));
       if(!rs.length) return null;
       const rec = rs.slice().sort((a,b)=> (ms(b.created)||0)-(ms(a.created)||0))[0]; // latest per role
-      const end = (rec.statusVal===3 || rec.statusVal===4) ? (rec.actionDate||rec.modified) : null;
+      const end = (rec.statusVal===3 || rec.statusVal===4) ? (rec.modified||rec.actionDate) : null; // same basis as Customer Approval
       return { status:rec.status||'', statusVal:rec.statusVal, start:rec.created, end, ms:durMs(rec.created,end), val:dur(rec.created,end) };
     };
     const estProc = estRole(/procurement/i);
@@ -499,7 +499,7 @@ async function fetchAndJoin(fromISO, toISO){
       ageingMs:  ageMs,
       status:    statusLabel,
       dept:      dept,
-      _name: q.name||'', _prNo: pr?pr.purchaseRequisition:'', _prLoc: pr?(pr.location||pr.projectId):'',
+      _name: q.name||'', _prNo: pr?pr.purchaseRequisition:'', _prLoc: pr?(prProject(pr)||pr.location||''):'',
       _woName: wo?wo.msdyn_name:'', _quoteCreated:q.createdon,
       _endJob: endJob, _finalDone: finalDone
     };
@@ -598,10 +598,11 @@ function stageFlags(r){
 function estCell(e,skipped){
   if(!e || !e.any) return skipped ? SKIP : '<span class="none">—</span>';
   const part=(lbl,o)=>{ if(!o) return '';
-    const cls = o.statusVal===3 ? 'cust' : (o.statusVal===4 ? 'bad' : 'markup');
-    const badge='<span class="tag '+cls+'">'+escapeHtml(o.status)+'</span>';
-    const t=o.val?'<span class="dur" title="'+escapeHtml(fmt(o.start)+'  →  '+fmt(o.end))+'">'+o.val+'</span> ':'';
-    return '<div class="nowrap"><span class="estlbl">'+lbl+'</span> '+t+badge+'</div>'; };
+    let v;
+    if(o.statusVal===3)      v = o.val ? '<span class="dur" title="'+escapeHtml(fmt(o.start)+'  →  '+fmt(o.end))+'">'+o.val+'</span>' : '<span class="none">—</span>';
+    else if(o.statusVal===4) v = '<span class="tag bad" title="'+escapeHtml(o.status)+'">REJ</span>';
+    else                     v = '<span class="tag markup" title="'+escapeHtml(o.status||'Pending')+'">PDNG</span>';
+    return '<div class="nowrap"><span class="estlbl">'+lbl+'</span> '+v+'</div>'; };
   return part('Proc',e.proc)+part('Ops',e.ops)+part('Appr',e.other);
 }
 
@@ -756,6 +757,14 @@ function bucketCard(m,cnt,av,wb){
     + '</div>';
 }
 
+// Project location of a PR = segment 5 of the F&O ledger dimension
+// e.g. "-Variation-402400-Building Services--THE PRISM TOWER-Materials-Sub_Contracted-" → "THE PRISM TOWER"
+// (proxy's own `location` field holds the department for CPR rows, so don't use it here)
+function prProject(p){
+  const raw = p && p.ledgerDimensionRaw;
+  if(raw){ const seg = String(raw).split('-'); if(seg.length>=7 && seg[5]) return seg[5]; }
+  return (p && p.projectId) || '';
+}
 // CPR PRs for the current FROM/TO date range + dept filter (dept matched via the quote, like the table)
 function currentPRs(){
   const dept = document.getElementById('deptSel').value;
@@ -878,7 +887,7 @@ function drillRfq(cat){
     list.map(x=>{
       const st = quoteStatusOf(x.qn);
       const crm = /sent\s*for\s*rfq/i.test(st) ? tintTag('Open','#E8A33D') : tintTag('Closed','#64748B');
-      return [ escapeHtml(x.p.purchaseRequisition||'—'), escapeHtml(x.p.name||x.p.description||x.p.title||'—'), escapeHtml(x.p.projectId||x.p.location||'—'), qlinkNo(x.qn), fmt(x.p.createdDate)||'—',
+      return [ escapeHtml(x.p.purchaseRequisition||'—'), escapeHtml(x.p.name||x.p.description||x.p.title||'—'), escapeHtml(prProject(x.p)||'—'), qlinkNo(x.qn), fmt(x.p.createdDate)||'—',
         x.done ? fmt(x.emailT) : '<span class="drill-ongoing">not received</span>',
         '<b>'+(x.done ? fmtDurMs(x.rfqMs) : (x.waitMs!=null?fmtDurMs(x.waitMs):'—'))+'</b>', crm ];
     }));
