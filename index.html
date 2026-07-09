@@ -60,7 +60,20 @@
   .btitle{font-size:16px;font-weight:800;color:var(--c);letter-spacing:.2px;line-height:1.15;}
   .bdesc{font-size:10.5px;color:var(--muted);margin-top:2px;}
   .baccent{height:3px;width:44%;background:var(--c);border-radius:3px;margin:2px 0 2px 16px;}
-  .brow{display:flex;align-items:center;gap:6px;padding:10px 12px;border-top:1px solid #f1f4f9;cursor:pointer;transition:background .12s;}
+  .brow{display:flex;align-items:center;gap:6px;padding:10px 12px;border-top:1px solid #f1f4f9;cursor:pointer;transition:background .12s;flex:1;}
+  .brow.split{flex-direction:column;align-items:stretch;justify-content:center;cursor:default;}
+  .bsplit-top{display:flex;align-items:center;gap:6px;}
+  .bsplit-top .bcol{width:auto;flex:0 0 auto;}
+  .bsplit-tiles{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:5px;}
+  .btile{border-radius:8px;padding:4px 8px;min-width:0;cursor:pointer;transition:filter .12s;}
+  .btile:hover{filter:brightness(.955);}
+  .btile .tl{display:flex;justify-content:space-between;align-items:baseline;gap:6px;font-size:12.5px;font-weight:800;letter-spacing:-.2px;white-space:nowrap;}
+  .btile .tl .delta{font-size:9px;}
+  .btile .ts{font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-top:1px;}
+  .btile.pr{background:#E6F1FB;} .btile.pr .tl{color:#0C447C;} .btile.pr .ts{color:#185FA5;}
+  .btile.est{background:#EEEDFE;} .btile.est .tl{color:#3C3489;} .btile.est .ts{color:#534AB7;}
+  .bratio{display:flex;height:4px;border-radius:2px;overflow:hidden;margin-top:5px;background:#EEF2F7;}
+  .bratio i{display:block;height:100%;}
   .brow:first-of-type{border-top:none;}
   .brow:hover{background:#f5f9fd;}
   .brow.cur:hover{background:linear-gradient(180deg,#e9f2fc,#dcebf8);}
@@ -236,7 +249,7 @@
   <span class="pill" id="userPill" style="display:none"></span>
   <button class="hbtn" onclick="refreshAll(true)" id="refreshBtn" style="display:none">↻ Refresh</button>
   <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
-  <span class="ver">v21</span>
+  <span class="ver">v22</span>
 </header>
 <div class="controls" id="controls" style="display:none">
   <div class="ctrl"><label>From</label><input type="date" id="fromDate" onchange="refreshAll()"></div>
@@ -679,6 +692,14 @@ function metricMs(r,k){ if(k==='ageing') return r.ageingMs!=null ? r.ageingMs : 
 // A quote "hits" a stage the moment it has a START date for it. If there is no END yet,
 // the stage is still running, so we measure to NOW (ongoing) instead of dropping the record.
 function stageSpan(r,k){
+  if(k==='est'){ // Estimation-without-PR approvals: earliest role start → latest role end (ongoing if any role still pending)
+    const e=r.est||{}; const recs=[e.proc,e.ops,e.other].filter(Boolean);
+    if(!recs.length) return {start:null,end:null};
+    let start=null,end=null,open=false;
+    recs.forEach(x=>{ const s=ms(x.start); if(s!=null&&(start==null||s<start)) start=s;
+      const en=ms(x.end); if(en==null) open=true; else if(end==null||en>end) end=en; });
+    return {start:start, end:(open?null:end)};
+  }
   if(k==='ageing'){ const fin=/posted\s*work\s*order/i.test(r.status||''); const e = fin ? (r.workExec && r.workExec.b) : null; return {start: ms(r.createdDateTime), end: ms(e)}; }
   if(k==='internal') return {start: ms(r.internal&&r.internal.start), end: ms(r.internal&&r.internal.end)};
   if(k==='customer') return {start: ms(r.customer&&r.customer.start), end: ms(r.customer&&r.customer.end)};
@@ -702,7 +723,7 @@ function weekOf(r,bounds){ const t=ms(r._quoteCreated||r.createdDateTime); if(t=
 const TREND_METRICS=[
   {k:'count',    label:'Quotes Created',    desc:'new quotes / week',   c:'#1F466B', icon:'📄', count:true},
   {k:'drafting', label:'Drafting',          desc:'created → RFQ / Internal / Customer', c:'#618FB4', icon:'✍️'},
-  {k:'rfq',      label:'RFQ Process',       desc:'PR → RFQ completion', c:'#145A95', icon:'📨'},
+  {k:'rfq',      label:'RFQ Process',       desc:'PR → RFQ · Estimation approval', c:'#145A95', icon:'📨', split:'est'},
   {k:'internal', label:'Internal Approval', desc:'Quote + Markup',      c:'#7E57C2', icon:'🛡️'},
   {k:'customer', label:'Customer Approval', desc:'customer sign-off',   c:'#2E8B57', icon:'🤝'},
   {k:'workExec', label:'Work Execution',    desc:'WO → End Job',        c:'#E8A33D', icon:'🔧'},
@@ -730,6 +751,11 @@ function renderKpis(){
       if(m.count){ cnt[w]=wk[w].length; }
       else { const vals=wk[w].map(r=>stageHitMs(r,m.k)).filter(x=>x!=null); cnt[w]=vals.length; av[w]=avg(vals); }
     }
+    if(m.split){ // second stream (estimation) shown side-by-side inside the same card
+      const cnt2=[0,0,0], av2=[null,null,null];
+      for(let w=0;w<3;w++){ const v2=wk[w].map(r=>stageHitMs(r,m.split)).filter(x=>x!=null); cnt2[w]=v2.length; av2[w]=avg(v2); }
+      return bucketCardSplit(m,cnt,av,cnt2,av2,wb);
+    }
     return bucketCard(m,cnt,av,wb);
   }).join('');
   document.getElementById('trendKpis').innerHTML =
@@ -753,6 +779,31 @@ function bucketCard(m,cnt,av,wb){
     }
     return '<div class="brow'+(isCur?' cur':'')+'" title="'+escapeHtml(fmtRange(wb[i]))+' · click to drill through" onclick="drillBucket(\''+m.k+'\','+i+')">'
       + '<span class="blbl">'+meta.lbl+'</span>' + cntCol + avgBlock + '</div>';
+  };
+  return '<div class="bcard" style="--c:'+m.c+'">'
+    + '<div class="bcard-head"><span class="bicon">'+m.icon+'</span><div><div class="btitle">'+m.label+'</div><div class="bdesc">'+m.desc+'</div></div></div>'
+    + '<div class="baccent"></div>'
+    + ROW_META.map(row).join('')
+    + '</div>';
+}
+
+// Split bucket card (RFQ Process): PR → RFQ and Estimation shown as two tiles per week row.
+function bucketCardSplit(m,cnt,av,cnt2,av2,wb){
+  const row=(meta)=>{
+    const i=meta.i, isCur=!!meta.cur;
+    const tot=cnt[i]+cnt2[i];
+    const totDelta = i<2 ? deltaCount(tot, cnt[i+1]+cnt2[i+1]) : '';
+    const p1 = tot ? Math.round(cnt[i]/tot*100) : 50;
+    const tile=(cls,lbl,k2,c,a,cd,ad)=>'<div class="btile '+cls+'" title="'+escapeHtml(fmtRange(wb[i]))+' · click to drill through" onclick="event.stopPropagation();drillBucket(\''+k2+'\','+i+')">'
+      + '<div class="tl"><span>'+c.toLocaleString()+(cd?' '+cd:'')+'</span><span>'+(a!=null?fmtDurMs(a):'—')+(ad?' '+ad:'')+'</span></div>'
+      + '<div class="ts">'+lbl+'</div></div>';
+    const cd1=i<2?deltaCount(cnt[i],cnt[i+1]):'',   ad1=i<2?deltaDur(av[i],av[i+1]):'';
+    const cd2=i<2?deltaCount(cnt2[i],cnt2[i+1]):'', ad2=i<2?deltaDur(av2[i],av2[i+1]):'';
+    return '<div class="brow split'+(isCur?' cur':'')+'" title="'+escapeHtml(fmtRange(wb[i]))+'">'
+      + '<div class="bsplit-top"><span class="blbl">'+meta.lbl+'</span><span class="bcol"><b>'+tot.toLocaleString()+'</b>'+totDelta+'</span></div>'
+      + '<div class="bsplit-tiles">'+tile('pr','PR → RFQ','rfq',cnt[i],av[i],cd1,ad1)+tile('est','Estimation','est',cnt2[i],av2[i],cd2,ad2)+'</div>'
+      + '<div class="bratio"><i style="width:'+p1+'%;background:#378ADD;"></i><i style="width:'+(100-p1)+'%;background:#7F77DD;"></i></div>'
+      + '</div>';
   };
   return '<div class="bcard" style="--c:'+m.c+'">'
     + '<div class="bcard-head"><span class="bicon">'+m.icon+'</span><div><div class="btitle">'+m.label+'</div><div class="bdesc">'+m.desc+'</div></div></div>'
@@ -861,7 +912,7 @@ function openDrill(title, cols, rows){
 // Drill a trend bucket for a given week: lists every quote that HIT that stage, with its timing.
 function drillBucket(k, w){
   const wb = WEEK_BOUNDS.length ? WEEK_BOUNDS : weekBoundaries();
-  const m = TREND_METRICS.find(x=>x.k===k) || {label:k};
+  const m = TREND_METRICS.find(x=>x.k===k) || (k==='est' ? {label:'Estimation Approval'} : {label:k});
   const rows = activeTrendRows().filter(r=> weekOf(r,wb)===w);
   const title = m.label+' · '+fmtRange(wb[w]);
   const qtype = r => r.quoteType ? tintTag(r.quoteType, quoteTypeColor(r.quoteType)) : '—';
