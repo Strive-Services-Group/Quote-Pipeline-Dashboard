@@ -39,7 +39,7 @@
   .dot.live{background:#7CE3A6;box-shadow:0 0 0 3px rgba(124,227,166,.25);} .dot.err{background:#ff9a96;}
   .hbtn{cursor:pointer;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:6px 15px;font-size:12.5px;font-weight:600;transition:.15s;font-family:inherit;}
   .hbtn:hover{background:rgba(255,255,255,.26);}
-  .controls{display:flex;align-items:center;gap:14px;margin:16px 30px 0;padding:12px 18px;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);flex-wrap:wrap;}
+  .controls{display:flex;align-items:center;gap:14px;margin:10px 30px 0;padding:7px 18px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);flex-wrap:wrap;}
   .ctrl{display:flex;align-items:center;gap:8px;}
   .ctrl label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
   select,input[type=text],input[type=date]{background:var(--bg);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;font-family:inherit;}
@@ -60,20 +60,14 @@
   .btitle{font-size:16px;font-weight:800;color:var(--c);letter-spacing:.2px;line-height:1.15;}
   .bdesc{font-size:10.5px;color:var(--muted);margin-top:2px;}
   .baccent{height:3px;width:44%;background:var(--c);border-radius:3px;margin:2px 0 2px 16px;}
-  .brow{display:flex;align-items:center;gap:6px;padding:8px 12px;border-top:1px solid #f1f4f9;cursor:pointer;transition:background .12s;min-height:74px;box-sizing:border-box;}
-  .brow.split{flex-direction:column;align-items:stretch;justify-content:center;cursor:default;}
-  .bsplit-top{display:flex;align-items:center;gap:6px;}
-  .bsplit-top .bcol{width:auto;flex:0 0 auto;}
-  .bsplit-tiles{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:4px;}
-  .btile{border-radius:8px;padding:3px 8px;min-width:0;cursor:pointer;transition:filter .12s;}
-  .btile:hover{filter:brightness(.955);}
-  .btile .tl{display:flex;justify-content:space-between;align-items:baseline;gap:6px;font-size:12.5px;font-weight:800;letter-spacing:-.2px;white-space:nowrap;}
-  .btile .tl .delta{font-size:9px;}
-  .btile .ts{font-size:9px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-top:1px;}
-  .btile.pr{background:#E6F1FB;} .btile.pr .tl{color:#0C447C;} .btile.pr .ts{color:#185FA5;}
-  .btile.est{background:#EEEDFE;} .btile.est .tl{color:#3C3489;} .btile.est .ts{color:#534AB7;}
-  .bratio{display:flex;height:3px;border-radius:2px;overflow:hidden;margin-top:4px;background:#EEF2F7;}
-  .bratio i{display:block;height:100%;}
+  .brow{display:flex;align-items:center;gap:6px;padding:10px 12px;border-top:1px solid #f1f4f9;cursor:pointer;transition:background .12s;}
+  .bgrp{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;flex:0 0 auto;min-width:72px;border-radius:7px;padding:2px 7px;cursor:pointer;transition:filter .12s;}
+  .bgrp:hover{filter:brightness(.955);}
+  .bgrp b{font-size:12px;font-weight:800;line-height:1.2;letter-spacing:-.2px;white-space:nowrap;}
+  .bgrp .dline{display:inline-flex;gap:5px;}
+  .bgrp.est2{background:#F1EFFD;} .bgrp.est2 b{color:#534AB7;}
+  .bgrp.pr2{background:#E9F2FB;} .bgrp.pr2 b{color:#145A95;}
+  .brow.cur .bgrp b{font-size:13px;}
   .brow:first-of-type{border-top:none;}
   .brow:hover{background:#f5f9fd;}
   .brow.cur:hover{background:linear-gradient(180deg,#e9f2fc,#dcebf8);}
@@ -98,22 +92,22 @@
   .tcard-body{padding:0 15px 5px;}
   .tcard-body.pend{display:flex;align-items:center;justify-content:space-between;gap:12px;}
   .tcard-body.pend .pend-age{margin-top:0;}
-  .tcard-body2{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2px 15px 8px;}
-  .tbig2{font-size:30px;font-weight:800;color:var(--tc);letter-spacing:-1px;line-height:1;}
-  .tsub2{font-size:10.5px;color:var(--muted);margin-top:4px;}
-  .tavg{font-size:11.5px;color:var(--slate);font-weight:800;margin-top:5px;white-space:nowrap;}
+  .tcard-body2{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 15px 5px;}
+  .tbig2{font-size:22px;font-weight:800;color:var(--tc);letter-spacing:-.6px;line-height:1;}
+  .tsub2{font-size:10px;color:var(--muted);margin-top:2px;}
+  .tavg{font-size:11px;color:var(--slate);font-weight:800;margin-top:3px;white-space:nowrap;}
   .tavg .tsub2{display:inline;font-weight:600;}
-  .donut{width:54px;height:54px;flex:0 0 54px;}
+  .donut{width:40px;height:40px;flex:0 0 40px;}
   .donut .bgc{fill:none;stroke:#EEF2F7;stroke-width:4;}
   .donut .fgc{fill:none;stroke:var(--tc);stroke-width:4;stroke-linecap:round;}
   .donut text{font-size:8.5px;font-weight:800;fill:var(--tc);text-anchor:middle;dominant-baseline:middle;}
-  .distbar{display:flex;height:9px;border-radius:5px;overflow:hidden;background:#EEF2F7;margin:8px 15px 7px;}
+  .distbar{display:flex;height:7px;border-radius:4px;overflow:hidden;background:#EEF2F7;margin:4px 15px 5px;}
   .distbar i{display:block;height:100%;}
-  .dleg{display:flex;flex-wrap:wrap;gap:3px 12px;padding:0 15px 10px;font-size:10px;font-weight:700;color:var(--muted);}
+  .dleg{display:flex;flex-wrap:wrap;gap:3px 12px;padding:0 15px 7px;font-size:10px;font-weight:700;color:var(--muted);}
   .dleg span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
   .dleg i{width:8px;height:8px;border-radius:2px;display:inline-block;}
   .dleg b{color:var(--slate);}
-  .pendchip{display:inline-flex;align-items:center;gap:5px;background:#FDF0EE;color:#C0392B;border-radius:9px;padding:3px 9px;font-size:10.5px;font-weight:800;margin-top:6px;white-space:nowrap;}
+  .pendchip{display:inline-flex;align-items:center;gap:5px;background:#FDF0EE;color:#C0392B;border-radius:9px;padding:2px 8px;font-size:10px;font-weight:800;margin-top:4px;white-space:nowrap;}
   .tcard .big{font-size:24px;font-weight:800;color:var(--tc,var(--ocean));line-height:1;letter-spacing:-1px;}
   .tcard .mini{font-size:10.5px;color:var(--muted);margin-top:4px;}
   .big.good{color:var(--good);} .big.bad{color:var(--bad);}
@@ -265,7 +259,7 @@
   <span class="pill" id="userPill" style="display:none"></span>
   <button class="hbtn" onclick="refreshAll(true)" id="refreshBtn" style="display:none">↻ Refresh</button>
   <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
-  <span class="ver">v23</span>
+  <span class="ver">v24</span>
 </header>
 <div class="controls" id="controls" style="display:none">
   <div class="ctrl"><label>From</label><input type="date" id="fromDate" onchange="refreshAll()"></div>
@@ -803,26 +797,27 @@ function bucketCard(m,cnt,av,wb){
     + '</div>';
 }
 
-// Split bucket card (RFQ Process): PR → RFQ and Estimation shown as two tiles per week row.
+// Split bucket card (RFQ Process): Estimation + PR → RFQ as two colored inline chips per week row,
+// single-line rows so the card matches every other bucket card's height exactly.
 function bucketCardSplit(m,cnt,av,cnt2,av2,wb){
+  const grp=(cls,k2,i,c,a,cd,ad)=>'<span class="bgrp '+cls+'" title="click to drill through" onclick="event.stopPropagation();drillBucket(\''+k2+'\','+i+')">'
+    + '<b>'+c.toLocaleString()+' · '+(a!=null?fmtDurMs(a):'—')+'</b>'
+    + ((cd||ad)?'<span class="dline">'+cd+ad+'</span>':'')
+    + '</span>';
   const row=(meta)=>{
     const i=meta.i, isCur=!!meta.cur;
-    const tot=cnt[i]+cnt2[i];
-    const totDelta = i<2 ? deltaCount(tot, cnt[i+1]+cnt2[i+1]) : '';
-    const p1 = tot ? Math.round(cnt2[i]/tot*100) : 50; // estimation share (left segment)
-    const tile=(cls,lbl,k2,c,a,cd,ad)=>'<div class="btile '+cls+'" title="'+escapeHtml(fmtRange(wb[i]))+' · click to drill through" onclick="event.stopPropagation();drillBucket(\''+k2+'\','+i+')">'
-      + '<div class="tl"><span>'+c.toLocaleString()+(cd?' '+cd:'')+'</span><span>'+(a!=null?fmtDurMs(a):'—')+(ad?' '+ad:'')+'</span></div>'
-      + '<div class="ts">'+lbl+'</div></div>';
     const cd1=i<2?deltaCount(cnt[i],cnt[i+1]):'',   ad1=i<2?deltaDur(av[i],av[i+1]):'';
     const cd2=i<2?deltaCount(cnt2[i],cnt2[i+1]):'', ad2=i<2?deltaDur(av2[i],av2[i+1]):'';
-    return '<div class="brow split'+(isCur?' cur':'')+'" title="'+escapeHtml(fmtRange(wb[i]))+'">'
-      + '<div class="bsplit-top"><span class="blbl">'+meta.lbl+'</span><span class="bcol"><b>'+tot.toLocaleString()+'</b>'+totDelta+'</span></div>'
-      + '<div class="bsplit-tiles">'+tile('est','Estimation','est',cnt2[i],av2[i],cd2,ad2)+tile('pr','PR → RFQ','rfq',cnt[i],av[i],cd1,ad1)+'</div>'
-      + '<div class="bratio"><i style="width:'+p1+'%;background:#7F77DD;"></i><i style="width:'+(100-p1)+'%;background:#378ADD;"></i></div>'
+    return '<div class="brow'+(isCur?' cur':'')+'" title="'+escapeHtml(fmtRange(wb[i]))+'">'
+      + '<span class="blbl">'+meta.lbl+'</span>'
+      + grp('est2','est',i,cnt2[i],av2[i],cd2,ad2)
+      + '<span class="bdivider"></span>'
+      + grp('pr2','rfq',i,cnt[i],av[i],cd1,ad1)
       + '</div>';
   };
   return '<div class="bcard" style="--c:'+m.c+'">'
-    + '<div class="bcard-head"><span class="bicon">'+m.icon+'</span><div><div class="btitle">'+m.label+'</div><div class="bdesc">'+m.desc+'</div></div></div>'
+    + '<div class="bcard-head"><span class="bicon">'+m.icon+'</span><div><div class="btitle">'+m.label+'</div>'
+    + '<div class="bdesc"><span style="color:#534AB7;font-weight:700;">Estimation</span> · <span style="color:#145A95;font-weight:700;">PR → RFQ</span> — count · avg</div></div></div>'
     + '<div class="baccent"></div>'
     + ROW_META.map(row).join('')
     + '</div>';
