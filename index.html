@@ -68,6 +68,11 @@
   .bgrp.est2{background:#F1EFFD;} .bgrp.est2 b{color:#534AB7;}
   .bgrp.pr2{background:#E9F2FB;} .bgrp.pr2 b{color:#145A95;}
   .brow.cur .bgrp b{font-size:13px;}
+  .dotsep{margin:0 5px;opacity:.45;font-weight:600;}
+  .blbl.bsym{flex:0 0 auto;font-size:12px;color:#9aa7b5;}
+  .brow.cur .blbl.bsym{color:var(--c);}
+  .cfl{display:inline-flex;align-items:center;gap:5px;cursor:pointer;}
+  .cfl input[type=checkbox]{width:12px;height:12px;accent-color:#E8A33D;cursor:pointer;margin:0;}
   .brow:first-of-type{border-top:none;}
   .brow:hover{background:#f5f9fd;}
   .brow.cur:hover{background:linear-gradient(180deg,#e9f2fc,#dcebf8);}
@@ -76,7 +81,7 @@
   .bcol.avg{width:72px;flex:0 0 72px;}
   .bcol b{font-size:15px;font-weight:800;color:var(--slate);line-height:1.15;letter-spacing:-.3px;white-space:nowrap;}
   .bdivider{width:1px;align-self:stretch;background:#EEF2F7;margin:4px 6px;}
-  .brow.cur{background:linear-gradient(180deg,#f9fcff,#f1f7fd);}
+  .brow.cur{background:linear-gradient(180deg,#f9fcff,#f1f7fd);padding-top:13px;padding-bottom:14px;}
   .brow.cur .blbl{color:var(--c);}
   .brow.cur .bcol b{font-size:17px;color:var(--c);}
   .delta{display:inline-flex;align-items:center;gap:2px;font-size:10.5px;font-weight:800;white-space:nowrap;line-height:1.3;margin-top:1px;}
@@ -86,28 +91,28 @@
   .procHead::after{content:'';flex:1;height:1px;background:var(--line);}
   .tcard{background:#fff;border:1px solid var(--line);border-radius:13px;padding:0;min-width:0;box-shadow:var(--shadow);border-top:4px solid var(--tc,var(--ocean));display:flex;flex-direction:column;transition:.16s;overflow:hidden;cursor:pointer;}
   .tcard:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);}
-  .tcard-top{display:flex;align-items:center;gap:10px;padding:4px 15px 3px;}
-  .tcard-ic{width:28px;height:28px;flex:0 0 28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;background:color-mix(in srgb,var(--tc,var(--ocean)) 13%,#fff);}
+  .tcard-top{display:flex;align-items:center;gap:9px;padding:2px 15px 1px;}
+  .tcard-ic{width:24px;height:24px;flex:0 0 24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;background:color-mix(in srgb,var(--tc,var(--ocean)) 13%,#fff);}
   .tcard .lbl{font-size:11.5px;color:var(--tc,var(--slate));text-transform:uppercase;letter-spacing:.6px;font-weight:800;}
   .tcard-body{padding:0 15px 5px;}
   .tcard-body.pend{display:flex;align-items:center;justify-content:space-between;gap:12px;}
   .tcard-body.pend .pend-age{margin-top:0;}
-  .tcard-body2{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 15px 5px;}
-  .tbig2{font-size:22px;font-weight:800;color:var(--tc);letter-spacing:-.6px;line-height:1;}
-  .tsub2{font-size:10px;color:var(--muted);margin-top:2px;}
-  .tavg{font-size:11px;color:var(--slate);font-weight:800;margin-top:3px;white-space:nowrap;}
+  .tcard-body2{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 15px 2px;}
+  .tbig2{font-size:20px;font-weight:800;color:var(--tc);letter-spacing:-.5px;line-height:1;}
+  .tsub2{font-size:10px;color:var(--muted);margin-top:1px;}
+  .tavg{font-size:11px;color:var(--slate);font-weight:800;margin-top:2px;white-space:nowrap;}
   .tavg .tsub2{display:inline;font-weight:600;}
-  .donut{width:40px;height:40px;flex:0 0 40px;}
+  .donut{width:34px;height:34px;flex:0 0 34px;}
   .donut .bgc{fill:none;stroke:#EEF2F7;stroke-width:4;}
   .donut .fgc{fill:none;stroke:var(--tc);stroke-width:4;stroke-linecap:round;}
   .donut text{font-size:8.5px;font-weight:800;fill:var(--tc);text-anchor:middle;dominant-baseline:middle;}
-  .distbar{display:flex;height:7px;border-radius:4px;overflow:hidden;background:#EEF2F7;margin:4px 15px 5px;}
+  .distbar{display:flex;height:7px;border-radius:4px;overflow:hidden;background:#EEF2F7;margin:2px 15px 3px;}
   .distbar i{display:block;height:100%;}
-  .dleg{display:flex;flex-wrap:wrap;gap:3px 12px;padding:0 15px 7px;font-size:10px;font-weight:700;color:var(--muted);}
+  .dleg{display:flex;flex-wrap:wrap;gap:3px 12px;padding:0 15px 4px;font-size:10px;font-weight:700;color:var(--muted);}
   .dleg span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
   .dleg i{width:8px;height:8px;border-radius:2px;display:inline-block;}
   .dleg b{color:var(--slate);}
-  .pendchip{display:inline-flex;align-items:center;gap:5px;background:#FDF0EE;color:#C0392B;border-radius:9px;padding:2px 8px;font-size:10px;font-weight:800;margin-top:4px;white-space:nowrap;}
+  .pendchip{display:inline-flex;align-items:center;gap:5px;background:#FDF0EE;color:#C0392B;border-radius:9px;padding:2px 8px;font-size:10px;font-weight:800;margin-top:2px;white-space:nowrap;}
   .tcard .big{font-size:24px;font-weight:800;color:var(--tc,var(--ocean));line-height:1;letter-spacing:-1px;}
   .tcard .mini{font-size:10.5px;color:var(--muted);margin-top:4px;}
   .big.good{color:var(--good);} .big.bad{color:var(--bad);}
@@ -259,7 +264,7 @@
   <span class="pill" id="userPill" style="display:none"></span>
   <button class="hbtn" onclick="refreshAll(true)" id="refreshBtn" style="display:none">↻ Refresh</button>
   <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
-  <span class="ver">v24</span>
+  <span class="ver">v25</span>
 </header>
 <div class="controls" id="controls" style="display:none">
   <div class="ctrl"><label>From</label><input type="date" id="fromDate" onchange="refreshAll()"></div>
@@ -629,10 +634,23 @@ function estCell(e,skipped){
   return part('Proc',e.proc)+part('Ops',e.ops)+part('Appr',e.other);
 }
 
+// Tickable column filters in the totals row: show only rows that HAVE a value in the ticked column(s).
+const COL_FILTER_DEFS = {
+  dr:  r => r.drafting && r.drafting.val!=null,
+  est: r => r.est && r.est.any,
+  rfq: r => r.rfq && r.rfq.val!=null,
+  ia:  r => r.internal && r.internal.status,
+  ca:  r => r.customer && r.customer.status,
+  we:  r => r.workExec && r.workExec.val!=null
+};
+let COL_FILTERS = {};
+function toggleColFilter(k,on){ if(on) COL_FILTERS[k]=1; else delete COL_FILTERS[k]; render(); }
+
 function render(){
   const q = (document.getElementById('search').value||'').toLowerCase().trim();
   let rows = activeRows();
   if(q){ rows = rows.filter(r => (r.quoteNo+' '+r._name+' '+r._prNo+' '+r._prLoc+' '+r.dept+' '+r.status+' '+r._woName).toLowerCase().includes(q)); }
+  Object.keys(COL_FILTERS).forEach(k=>{ const p=COL_FILTER_DEFS[k]; if(p) rows = rows.filter(p); });
   const tb = document.getElementById('tbody');
   document.getElementById('emptyMsg').style.display = rows.length ? 'none' : '';
   tb.innerHTML = rows.map(r=>{
@@ -673,7 +691,11 @@ function renderCountRow(rows){
     st:   rows.filter(r=>r.status).length,
     est:  rows.filter(r=>r.est && r.est.any).length
   };
-  const cell = (v,lbl)=>'<th><span class="cnum">'+v+'</span> <span class="clbl">'+lbl+'</span></th>';
+  const cell = (v,lbl,k)=>'<th>'
+    + (k ? '<label class="cfl" title="Tick to show only rows with a value in this column">'
+         + '<input type="checkbox" onchange="toggleColFilter(\''+k+'\',this.checked)"'+(COL_FILTERS[k]?' checked':'')+'>' : '')
+    + '<span class="cnum">'+v+'</span> <span class="clbl">'+lbl+'</span>'
+    + (k ? '</label>' : '') + '</th>';
   const blank = '<th></th>';
   const pre  = rows.filter(r=>/predefined/i.test(r.quoteType||'')).length;
   const insp = rows.filter(r=>/inspection/i.test(r.quoteType||'')).length;
@@ -682,12 +704,12 @@ function renderCountRow(rows){
       cell(n,'quotes')      /* Quote No */
     + blank                 /* Created Date */
     + typeCell              /* Quote Type */
-    + cell(c.dr,'drafted')  /* Drafting */
-    + cell(c.est,'est appr')/* Estimation Without PR */
-    + cell(c.rfq,'rfq')     /* RFQ Process */
-    + cell(c.ia,'internal') /* Internal Approval */
-    + cell(c.ca,'customer') /* Customer Approval */
-    + cell(c.we,'executed') /* Work Execution */
+    + cell(c.dr,'drafted','dr')   /* Drafting */
+    + cell(c.est,'est appr','est')/* Estimation Without PR */
+    + cell(c.rfq,'rfq','rfq')     /* RFQ Process */
+    + cell(c.ia,'internal','ia')  /* Internal Approval */
+    + cell(c.ca,'customer','ca')  /* Customer Approval */
+    + cell(c.we,'executed','we')  /* Work Execution */
     + blank                 /* Total Ageing */
     + blank;                /* Status */
   // keep the totals row stuck right under the (variable-height) header row
@@ -801,15 +823,16 @@ function bucketCard(m,cnt,av,wb){
 // single-line rows so the card matches every other bucket card's height exactly.
 function bucketCardSplit(m,cnt,av,cnt2,av2,wb){
   const grp=(cls,k2,i,c,a,cd,ad)=>'<span class="bgrp '+cls+'" title="click to drill through" onclick="event.stopPropagation();drillBucket(\''+k2+'\','+i+')">'
-    + '<b>'+c.toLocaleString()+' · '+(a!=null?fmtDurMs(a):'—')+'</b>'
+    + '<b>'+c.toLocaleString()+'<span class="dotsep">·</span>'+(a!=null?fmtDurMs(a):'—')+'</b>'
     + ((cd||ad)?'<span class="dline">'+cd+ad+'</span>':'')
     + '</span>';
   const row=(meta)=>{
     const i=meta.i, isCur=!!meta.cur;
+    const sym = isCur ? '▶' : (i===1 ? '◀' : '⏮');
     const cd1=i<2?deltaCount(cnt[i],cnt[i+1]):'',   ad1=i<2?deltaDur(av[i],av[i+1]):'';
     const cd2=i<2?deltaCount(cnt2[i],cnt2[i+1]):'', ad2=i<2?deltaDur(av2[i],av2[i+1]):'';
-    return '<div class="brow'+(isCur?' cur':'')+'" title="'+escapeHtml(fmtRange(wb[i]))+'">'
-      + '<span class="blbl">'+meta.lbl+'</span>'
+    return '<div class="brow'+(isCur?' cur':'')+'" title="'+escapeHtml(meta.lbl+' · '+fmtRange(wb[i]))+'">'
+      + '<span class="blbl bsym" title="'+escapeHtml(meta.lbl)+'">'+sym+'</span>'
       + grp('est2','est',i,cnt2[i],av2[i],cd2,ad2)
       + '<span class="bdivider"></span>'
       + grp('pr2','rfq',i,cnt[i],av[i],cd1,ad1)
