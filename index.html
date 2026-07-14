@@ -73,8 +73,8 @@
   .brow.cur .blbl.bsym{color:var(--c);}
   .cfl{display:inline-flex;align-items:center;gap:5px;cursor:pointer;}
   .cfl input[type=checkbox]{width:12px;height:12px;accent-color:#E8A33D;cursor:pointer;margin:0;}
-  td.pl-r{background-image:linear-gradient(#E24B4A,#E24B4A);background-repeat:no-repeat;background-size:100% 1px;background-position:0 calc(100% - 3px);} /* red line floats 3px above the row border */
-  td.pl-g{background-image:linear-gradient(#2E8B57,#2E8B57);background-repeat:no-repeat;background-size:100% 1px;background-position:0 calc(100% - 3px);} /* green line: Posted WorkOrder */
+  td.pl-r{border-bottom:1px solid #E24B4A !important;} /* progress line: red, Drafting → stuck column */
+  td.pl-g{border-bottom:1px solid #2E8B57 !important;} /* green line: Posted WorkOrder, Drafting → Work Execution */
   .brow:first-of-type{border-top:none;}
   .brow:hover{background:#f5f9fd;}
   .brow.cur:hover{background:linear-gradient(180deg,#e9f2fc,#dcebf8);}
@@ -129,8 +129,8 @@
   .split-row .seg+.seg{border-left:1px solid var(--line);}
   .split-row .seg b{display:block;font-size:20px;font-weight:800;color:var(--tc,var(--ocean));line-height:1.1;letter-spacing:-.3px;}
   .split-row .seg .seglbl{display:flex;align-items:center;justify-content:center;gap:4px;font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-top:6px;}
-  .wrap{padding:14px 30px 46px;overflow:visible;} /* overflow:auto here would trap the sticky table header */
-  table{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px;background:#fff;border:1px solid var(--line);border-radius:13px;overflow:hidden;box-shadow:var(--shadow);}
+  .wrap{padding:14px 30px 46px;overflow:auto;} /* table scrolls inside this box; JS caps its height to the window */
+  table{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px;background:#fff;border:1px solid var(--line);border-radius:13px;overflow:hidden;overflow:clip;box-shadow:var(--shadow);} /* overflow:clip keeps rounded corners WITHOUT breaking the sticky header (hidden would trap it) */
   thead tr.countrow th{position:sticky;top:56px;z-index:2;background:#EAF1F8;color:var(--ocean);text-align:left;padding:3px 12px;white-space:nowrap;font-weight:800;font-size:11px;letter-spacing:.03em;border-bottom:1px solid var(--line);}
   thead tr.countrow th .cnum{font-size:12px;font-weight:800;color:var(--ocean);}
   thead tr.countrow th .clbl{font-size:11px;font-weight:800;color:var(--ocean);}
@@ -270,7 +270,7 @@
   <span class="pill" id="userPill" style="display:none"></span>
   <button class="hbtn" onclick="refreshAll(true)" id="refreshBtn" style="display:none">↻ Refresh</button>
   <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
-  <span class="ver">v30</span>
+  <span class="ver">v31</span>
 </header>
 <div class="controls" id="controls" style="display:none">
   <div class="ctrl"><label>From</label><input type="date" id="fromDate" onchange="refreshAll()"></div>
@@ -752,14 +752,16 @@ function renderCountRow(rows){
     + blank;                /* Status */
   syncStickyTops();
 }
-// Freeze the table header just below the sticky page header, and the totals row right under it.
+// Freeze the table header: the table scrolls inside .wrap (its height capped to the window),
+// headrow pins at the top of that box, totals row right under it.
 function syncStickyTops(){
+  const wrap = document.getElementById('wrap');
   const hdr = document.querySelector('header');
-  const hh = hdr ? hdr.offsetHeight : 0;
-  document.querySelectorAll('thead tr.headrow th').forEach(th=>th.style.top=hh+'px');
+  if(wrap && hdr){ wrap.style.maxHeight = Math.max(300, window.innerHeight - hdr.offsetHeight - 10) + 'px'; }
+  document.querySelectorAll('thead tr.headrow th').forEach(th=>th.style.top='0px');
   const hr = document.querySelector('thead tr.headrow');
   if(hr){ const h = hr.offsetHeight;
-    document.querySelectorAll('thead tr.countrow th').forEach(th=>th.style.top=(hh+h)+'px'); }
+    document.querySelectorAll('thead tr.countrow th').forEach(th=>th.style.top=h+'px'); }
 }
 window.addEventListener('resize', function(){ try{ syncStickyTops(); }catch(e){} });
 
