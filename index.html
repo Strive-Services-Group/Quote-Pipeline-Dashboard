@@ -73,8 +73,8 @@
   .brow.cur .blbl.bsym{color:var(--c);}
   .cfl{display:inline-flex;align-items:center;gap:5px;cursor:pointer;}
   .cfl input[type=checkbox]{width:12px;height:12px;accent-color:#E8A33D;cursor:pointer;margin:0;}
-  td.pl-r{border-bottom:2px solid #E24B4A !important;} /* progress line: red up to the stuck column */
-  td.pl-g{border-bottom:2px solid #2E8B57 !important;} /* full green line: Posted WorkOrder */
+  td.pl-r{border-bottom:1px solid #E24B4A !important;} /* progress line: red, Drafting → stuck column */
+  td.pl-g{border-bottom:1px solid #2E8B57 !important;} /* green line: Posted WorkOrder, Drafting → Work Execution */
   .brow:first-of-type{border-top:none;}
   .brow:hover{background:#f5f9fd;}
   .brow.cur:hover{background:linear-gradient(180deg,#e9f2fc,#dcebf8);}
@@ -270,7 +270,7 @@
   <span class="pill" id="userPill" style="display:none"></span>
   <button class="hbtn" onclick="refreshAll(true)" id="refreshBtn" style="display:none">↻ Refresh</button>
   <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
-  <span class="ver">v28</span>
+  <span class="ver">v29</span>
 </header>
 <div class="controls" id="controls" style="display:none">
   <div class="ctrl"><label>From</label><input type="date" id="fromDate" onchange="refreshAll()"></div>
@@ -682,10 +682,12 @@ function render(){
   tb.innerHTML = rows.map(r=>{
     const sk = stageFlags(r);
     const stuck = r._finalDone ? null : stuckStageIdx(r, sk);
-    const stuckCol = stuck==null ? null : (stuck===6 ? 10 : 3+stuck); // stage idx → table column idx
+    const stuckCol = stuck==null ? null : Math.min(3+stuck, 8); // stage idx → table column idx, capped at Work Execution
     const pc = (ci,extra)=>{ let c = extra||'';
-      if(r._finalDone) c += ' pl-g';
-      else if(stuckCol!=null && ci<=stuckCol) c += ' pl-r';
+      if(ci>=3 && ci<=8){ // line runs only from Drafting to Work Execution
+        if(r._finalDone) c += ' pl-g';
+        else if(stuckCol!=null && ci<=stuckCol) c += ' pl-r';
+      }
       c = c.trim(); return c ? ' class="'+c+'"' : ''; };
     const pend = (html,i)=> (stuck===i && /class="none"/.test(html)) ? tintTag('Pending','#E8A33D') : html;
     return `
