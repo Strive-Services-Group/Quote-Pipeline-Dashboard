@@ -73,6 +73,8 @@
   .brow.cur .blbl.bsym{color:var(--c);}
   .cfl{display:inline-flex;align-items:center;gap:5px;cursor:pointer;}
   .cfl input[type=checkbox]{width:12px;height:12px;accent-color:#E8A33D;cursor:pointer;margin:0;}
+  td.pl-r{border-bottom:2px solid #E24B4A !important;} /* progress line: red up to the stuck column */
+  td.pl-g{border-bottom:2px solid #2E8B57 !important;} /* full green line: Posted WorkOrder */
   .brow:first-of-type{border-top:none;}
   .brow:hover{background:#f5f9fd;}
   .brow.cur:hover{background:linear-gradient(180deg,#e9f2fc,#dcebf8);}
@@ -268,7 +270,7 @@
   <span class="pill" id="userPill" style="display:none"></span>
   <button class="hbtn" onclick="refreshAll(true)" id="refreshBtn" style="display:none">↻ Refresh</button>
   <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
-  <span class="ver">v27</span>
+  <span class="ver">v28</span>
 </header>
 <div class="controls" id="controls" style="display:none">
   <div class="ctrl"><label>From</label><input type="date" id="fromDate" onchange="refreshAll()"></div>
@@ -650,6 +652,26 @@ const COL_FILTER_DEFS = {
 let COL_FILTERS = {};
 function toggleColFilter(k,on){ if(on) COL_FILTERS[k]=1; else delete COL_FILTERS[k]; render(); }
 
+// Where is this quote STUCK? First stage that is neither finished nor skipped (in-progress counts as stuck).
+// Stage indexes: 0 drafting, 1 estimation, 2 rfq, 3 internal, 4 customer, 5 workExec. Returns 6 = all stages done, awaiting "Posted WorkOrder".
+function stuckStageIdx(r, sk){
+  const est = r.est || {};
+  const roles = [est.proc, est.ops, est.other].filter(Boolean);
+  const estPending = roles.some(o => o && o.statusVal!==3 && o.statusVal!==4);
+  const estDone = est.any && !estPending;
+  const prPath = !!(r.rfq && r.rfq.a); // a PR was raised → the quote took the PR route, estimation is passed
+  const done = [
+    r.drafting && r.drafting.val!=null,
+    estDone || (!est.any && prPath),
+    r.rfq && r.rfq.val!=null,
+    r.internal && r.internal.end!=null,
+    r.customer && r.customer.end!=null,
+    r.workExec && r.workExec.val!=null
+  ];
+  for(let i=0;i<6;i++){ if(sk[i]) continue; if(!done[i]) return i; }
+  return 6;
+}
+
 function render(){
   const q = (document.getElementById('search').value||'').toLowerCase().trim();
   let rows = activeRows();
@@ -659,23 +681,30 @@ function render(){
   document.getElementById('emptyMsg').style.display = rows.length ? 'none' : '';
   tb.innerHTML = rows.map(r=>{
     const sk = stageFlags(r);
+    const stuck = r._finalDone ? null : stuckStageIdx(r, sk);
+    const stuckCol = stuck==null ? null : (stuck===6 ? 10 : 3+stuck); // stage idx → table column idx
+    const pc = (ci,extra)=>{ let c = extra||'';
+      if(r._finalDone) c += ' pl-g';
+      else if(stuckCol!=null && ci<=stuckCol) c += ' pl-r';
+      c = c.trim(); return c ? ' class="'+c+'"' : ''; };
+    const pend = (html,i)=> (stuck===i && /class="none"/.test(html)) ? tintTag('Pending','#E8A33D') : html;
     return `
     <tr>
-      <td class="qno">${ r.quoteId ? '<a href="'+quoteUrl(r.quoteId)+'" target="_blank" rel="noopener">'+escapeHtml(r.quoteNo)+'</a>' : escapeHtml(r.quoteNo) }</td>
-      <td>${dcell(r.createdDateTime)}</td>
-      <td>${ r.quoteType ? tintTag(r.quoteType, quoteTypeColor(r.quoteType)) : '<span class="none">—</span>' }</td>
-      <td>${durCell(r.drafting,sk[0])}</td>
-      <td>${estCell(r.est,sk[1])}</td>
-      <td>${durCell(r.rfq,sk[2])}</td>
-      <td>${apprCell(r.internal,sk[3])}</td>
-      <td>${apprCell(r.customer,sk[4])}</td>
-      <td>${durCell(r.workExec,sk[5])}</td>
-      <td>${ r.ageingMs!=null
+      <td${pc(0,'qno')}>${ r.quoteId ? '<a href="'+quoteUrl(r.quoteId)+'" target="_blank" rel="noopener">'+escapeHtml(r.quoteNo)+'</a>' : escapeHtml(r.quoteNo) }</td>
+      <td${pc(1)}>${dcell(r.createdDateTime)}</td>
+      <td${pc(2)}>${ r.quoteType ? tintTag(r.quoteType, quoteTypeColor(r.quoteType)) : '<span class="none">—</span>' }</td>
+      <td${pc(3)}>${pend(durCell(r.drafting,sk[0]),0)}</td>
+      <td${pc(4)}>${pend(estCell(r.est,sk[1]),1)}</td>
+      <td${pc(5)}>${pend(durCell(r.rfq,sk[2]),2)}</td>
+      <td${pc(6)}>${pend(apprCell(r.internal,sk[3]),3)}</td>
+      <td${pc(7)}>${pend(apprCell(r.customer,sk[4]),4)}</td>
+      <td${pc(8)}>${pend(durCell(r.workExec,sk[5]),5)}</td>
+      <td${pc(9)}>${ r.ageingMs!=null
             ? ((r._finalDone && r._endJob)
                 ? '<b class="nowrap">'+fmtDaysHrs(r.ageingMs)+'</b><br><b class="small nowrap" title="End Job">'+fmt(r._endJob)+'</b>'
                 : '<span class="nowrap">'+fmtDaysHrs(r.ageingMs)+'</span>')
             : '<span class="none">—</span>' }</td>
-      <td>${ r.status ? tintTag(r.status, statusColor(r.status)) : '<span class="none">—</span>' }</td>
+      <td${pc(10)}>${ r.status ? tintTag(r.status, statusColor(r.status)) : '<span class="none">—</span>' }</td>
     </tr>`;
   }).join('');
   renderCountRow(rows);
