@@ -130,13 +130,20 @@
   .split-row .seg .seglbl{display:flex;align-items:center;justify-content:center;gap:4px;font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-top:6px;}
   .wrap{padding:0 30px 46px;margin-top:14px;overflow:auto;} /* NO top padding: scrolled rows would show through it above the pinned header */
   table{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px;background:#fff;border:1px solid var(--line);border-radius:13px;overflow:hidden;overflow:clip;box-shadow:var(--shadow);} /* overflow:clip keeps rounded corners WITHOUT breaking the sticky header (hidden would trap it) */
-  thead tr.countrow th{position:sticky;top:56px;z-index:2;background:#EAF1F8;color:var(--ocean);text-align:left;padding:3px 8px;white-space:nowrap;font-weight:800;font-size:11px;letter-spacing:.03em;border-bottom:1px solid var(--line);}
+  thead tr.countrow th{position:sticky;top:56px;z-index:2;background:#EAF1F8;color:var(--ocean);text-align:left;padding:3px 8px;white-space:nowrap;font-weight:800;font-size:11px;letter-spacing:.03em;border-bottom:1px solid var(--line);box-shadow:-1px 0 0 #EAF1F8,1px 0 0 #EAF1F8;}
   thead tr.countrow th .cnum{font-size:12px;font-weight:800;color:var(--ocean);}
   thead tr.countrow th .clbl{font-size:11px;font-weight:800;color:var(--ocean);}
-  thead tr.headrow th{position:sticky;top:0;z-index:3;background:var(--ocean);color:#fff;text-align:left;vertical-align:top;padding:9px 8px;white-space:nowrap;font-weight:700;border-right:1px solid rgba(255,255,255,.14);line-height:1.35;}
+  thead tr.headrow th{position:sticky;top:0;z-index:3;background:var(--ocean);color:#fff;text-align:left;vertical-align:top;padding:9px 8px;white-space:nowrap;font-weight:700;border-right:1px solid rgba(255,255,255,.14);line-height:1.35;box-shadow:-1px 0 0 var(--ocean),1px 0 0 var(--ocean);} /* shadows bridge sub-pixel seams caused by zoom */
   thead tr.headrow th .small.muted{color:rgba(255,255,255,.72);font-weight:500;white-space:normal;display:inline-block;max-width:140px;line-height:1.25;} /* subtitles may wrap so columns stay narrow */
   thead tr.headrow th .thi{margin-right:6px;}
-  tbody td{padding:5px 8px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);vertical-align:middle;}
+  .wrap>table{table-layout:fixed;} /* fixed columns: widths never jump when filters change the content */
+  .wrap>table thead tr.headrow th:nth-child(1){width:6%}   .wrap>table thead tr.headrow th:nth-child(2){width:9%}
+  .wrap>table thead tr.headrow th:nth-child(3){width:6.5%} .wrap>table thead tr.headrow th:nth-child(4){width:8.5%}
+  .wrap>table thead tr.headrow th:nth-child(5){width:9.5%} .wrap>table thead tr.headrow th:nth-child(6){width:8%}
+  .wrap>table thead tr.headrow th:nth-child(7){width:8%}   .wrap>table thead tr.headrow th:nth-child(8){width:8.5%}
+  .wrap>table thead tr.headrow th:nth-child(9){width:7.5%} .wrap>table thead tr.headrow th:nth-child(10){width:9.5%}
+  .wrap>table thead tr.headrow th:nth-child(11){width:7.5%}.wrap>table thead tr.headrow th:nth-child(12){width:11.5%}
+  tbody td{padding:5px 8px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);vertical-align:middle;overflow:hidden;}
   tbody tr:nth-child(even){background:#FAFBFD;}
   tbody tr:hover{background:#EEF4FB;}
   .qno a{font-weight:700;color:var(--ocean);text-decoration:none;border-bottom:1px dotted var(--steel);white-space:nowrap;}
@@ -269,7 +276,7 @@
   <span class="pill" id="userPill" style="display:none"></span>
   <button class="hbtn" onclick="refreshAll(true)" id="refreshBtn" style="display:none">↻ Refresh</button>
   <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
-  <span class="ver">v44</span>
+  <span class="ver">v45</span>
 </header>
 <div class="controls" id="controls" style="display:none">
   <div class="ctrl"><label>From</label><input type="date" id="fromDate" onchange="refreshAll()"></div>
