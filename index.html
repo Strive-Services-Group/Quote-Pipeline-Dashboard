@@ -269,13 +269,16 @@
   <span class="pill" id="userPill" style="display:none"></span>
   <button class="hbtn" onclick="refreshAll(true)" id="refreshBtn" style="display:none">↻ Refresh</button>
   <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
-  <span class="ver">v42</span>
+  <span class="ver">v44</span>
 </header>
 <div class="controls" id="controls" style="display:none">
   <div class="ctrl"><label>From</label><input type="date" id="fromDate" onchange="refreshAll()"></div>
   <div class="ctrl"><label>To</label><input type="date" id="toDate" onchange="refreshAll()"></div>
   <div class="ctrl"><label>Dept</label>
     <select id="deptSel" onchange="applyFilter()"><option value="">All Departments</option></select>
+  </div>
+  <div class="ctrl"><label>Type</label>
+    <select id="typeSel" onchange="applyFilter()"><option value="">All Types</option><option value="predefined">Predefined</option><option value="inspection">Inspection</option></select>
   </div>
   <div class="ctrl"><input type="text" id="search" placeholder="Search quote no, project, PR, status…" oninput="render()"></div>
 </div>
@@ -501,11 +504,18 @@ async function fetchAndJoin(fromISO, toISO){
       if(!rs.length) return null;
       const rec = rs.slice().sort((a,b)=> (ms(b.created)||0)-(ms(a.created)||0))[0]; // latest per role
       const end = (rec.statusVal===3 || rec.statusVal===4) ? (rec.modified||rec.actionDate) : null; // same basis as Customer Approval
-      return { status:rec.status||'', statusVal:rec.statusVal, start:rec.created, end, ms:durMs(rec.created,end), val:dur(rec.created,end) };
+      return { status:rec.status||'', statusVal:rec.statusVal, start:rec.created, end, ms:durMs(rec.created,end), val:dur(rec.created,end), approver:rec.approver||'' };
     };
-    const estProc = estRole(/procurement/i);
-    const estOps  = estRole(/operation/i);
-    const estOther = (!estProc && !estOps && estRecs.length) ? estRole(/./) : null;
+    let estProc = estRole(/procurement/i);
+    let estOps  = estRole(/operation/i);
+    // Records whose approver matches NEITHER role fill the empty slot (Ops first, then Proc) so both approvals always show as PROC/OPS
+    const mkEst = (rec)=>{ const end = (rec.statusVal===3 || rec.statusVal===4) ? (rec.modified||rec.actionDate) : null;
+      return { status:rec.status||'', statusVal:rec.statusVal, start:rec.created, end, ms:durMs(rec.created,end), val:dur(rec.created,end), approver:rec.approver||'' }; };
+    const estLeft = estRecs.filter(a=> !/procurement/i.test(a.approver||'') && !/operation/i.test(a.approver||''))
+      .sort((a,b)=> (ms(b.created)||0)-(ms(a.created)||0));
+    if(!estOps  && estLeft.length) estOps  = mkEst(estLeft.shift());
+    if(!estProc && estLeft.length) estProc = mkEst(estLeft.shift());
+    const estOther = estLeft.length ? mkEst(estLeft[0]) : null;
     const dept = (opp.ssg_textdepartment||'').trim() || (wo?(wo['_ssg_department_value'+F]||''):'') || (pr?(pr.department||''):'') || '';
     const quoteType = QUOTE_TYPE_FIELD ? (q[QUOTE_TYPE_FIELD+F] || q[QUOTE_TYPE_FIELD] || '') : '';
     // Drafting ends when the quote first leaves drafting. Inspection quotes have no PR/RFQ/approval —
@@ -593,13 +603,17 @@ function populateDepts(){
   sel.innerHTML='<option value="">All Departments</option>'+depts.map(d=>'<option value="'+escapeHtml(d)+'">'+escapeHtml(d)+'</option>').join('');
   if(depts.includes(cur)) sel.value=cur;
 }
+function typeMatch(r){
+  const el=document.getElementById('typeSel'); const v=el?el.value:'';
+  return !v || new RegExp(v,'i').test(r.quoteType||'');
+}
 function activeRows(){
   const dept=document.getElementById('deptSel').value;
-  return dept ? DATA.filter(r=>r.dept===dept) : DATA;
+  return (dept ? DATA.filter(r=>r.dept===dept) : DATA).filter(typeMatch);
 }
 function activeTrendRows(){
   const dept=document.getElementById('deptSel').value;
-  return dept ? TREND_DATA.filter(r=>r.dept===dept) : TREND_DATA;
+  return (dept ? TREND_DATA.filter(r=>r.dept===dept) : TREND_DATA).filter(typeMatch);
 }
 function applyFilter(){ renderKpis(); render(); }
 
@@ -645,7 +659,7 @@ function estCell(e,skipped,hotMs){
     if(o.statusVal===3)      v = o.val ? '<span class="dur'+hotCls(o.ms,hotMs)+'" title="'+escapeHtml(fmt(o.start)+'  →  '+fmt(o.end))+'">'+o.val+'</span>' : '<span class="none">—</span>';
     else if(o.statusVal===4) v = '<span class="tag bad" title="'+escapeHtml(o.status)+'">REJ</span>';
     else                     v = '<span class="tag markup" title="'+escapeHtml(o.status||'Pending')+'">PDNG</span>';
-    return '<div class="nowrap"><span class="estlbl">'+lbl+'</span> '+v+'</div>'; };
+    return '<div class="nowrap"><span class="estlbl" title="'+escapeHtml(o.approver||'')+'">'+lbl+'</span> '+v+'</div>'; };
   return part('Proc',e.proc)+part('Ops',e.ops)+part('Appr',e.other);
 }
 
