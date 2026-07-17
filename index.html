@@ -73,6 +73,7 @@
   .brow.cur .blbl.bsym{color:var(--c);}
   .cfl{display:inline-flex;align-items:center;gap:5px;cursor:pointer;}
   .cfl input[type=checkbox]{width:12px;height:12px;accent-color:#E8A33D;cursor:pointer;margin:0;}
+  .dur.hot{color:#C0392B;background:#FCEBEB;border-radius:8px;padding:2px 8px;font-weight:800;} /* ageing over the stage's limit */
   .brow:first-of-type{border-top:none;}
   .brow:hover{background:#f5f9fd;}
   .brow.cur:hover{background:linear-gradient(180deg,#e9f2fc,#dcebf8);}
@@ -268,7 +269,7 @@
   <span class="pill" id="userPill" style="display:none"></span>
   <button class="hbtn" onclick="refreshAll(true)" id="refreshBtn" style="display:none">↻ Refresh</button>
   <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
-  <span class="ver">v33</span>
+  <span class="ver">v34</span>
 </header>
 <div class="controls" id="controls" style="display:none">
   <div class="ctrl"><label>From</label><input type="date" id="fromDate" onchange="refreshAll()"></div>
@@ -599,14 +600,15 @@ function applyFilter(){ renderKpis(); render(); }
 function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function dcell(v){ return v ? '<span class="nowrap">'+fmt(v)+'</span>' : '<span class="none">—</span>'; }
 const SKIP='<span class="skip">Skipped</span>';
-function durCell(o,skipped){ if(o && o.val) return '<span class="dur" title="'+escapeHtml(fmt(o.a)+'  →  '+fmt(o.b))+'">'+o.val+'</span>';
+function hotCls(ms,hotMs){ return (hotMs!=null && ms!=null && ms>hotMs) ? ' hot' : ''; }
+function durCell(o,skipped,hotMs){ if(o && o.val) return '<span class="dur'+hotCls(o.ms,hotMs)+'" title="'+escapeHtml(fmt(o.a)+'  →  '+fmt(o.b))+'">'+o.val+'</span>';
   return skipped ? SKIP : '<span class="none">—</span>'; }
 function statusCls(s){ s=(s||'').toLowerCase(); if(s.indexOf('approv')>=0&&s.indexOf('reject')<0) return 'cust';
   if(s.indexOf('reject')>=0) return 'bad'; return 'markup'; }
-function apprCell(o,skipped,hideApproved){ if(!o || !o.status) return skipped ? SKIP : '<span class="none">—</span>';
+function apprCell(o,skipped,hideApproved,hotMs){ if(!o || !o.status) return skipped ? SKIP : '<span class="none">—</span>';
   const isAppr = /approved/i.test(o.status) && !/reject/i.test(o.status);
   const badge = (hideApproved && isAppr) ? '' : '<span class="tag '+statusCls(o.status)+'">'+escapeHtml(o.status)+'</span>';
-  if(o.val) return '<span class="dur" title="'+escapeHtml(fmt(o.start)+'  →  '+fmt(o.end))+'">'+o.val+'</span>'+(badge?' '+badge:'');
+  if(o.val) return '<span class="dur'+hotCls(o.ms,hotMs)+'" title="'+escapeHtml(fmt(o.start)+'  →  '+fmt(o.end))+'">'+o.val+'</span>'+(badge?' '+badge:'');
   return badge || '<span class="none">—</span>'; }
 function fmtShort(v){ const d=new Date(v); if(!v||isNaN(d)) return '';
   return d.toLocaleDateString('en-GB',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}); }
@@ -630,11 +632,11 @@ function stageFlags(r){
   return has.map((h,i)=> h ? false : has.slice(i+1).some(Boolean));
 }
 // "Estimation Without PR" cell — one row per approver role (Procurement / Operations)
-function estCell(e,skipped){
+function estCell(e,skipped,hotMs){
   if(!e || !e.any) return skipped ? SKIP : '<span class="none">—</span>';
   const part=(lbl,o)=>{ if(!o) return '';
     let v;
-    if(o.statusVal===3)      v = o.val ? '<span class="dur" title="'+escapeHtml(fmt(o.start)+'  →  '+fmt(o.end))+'">'+o.val+'</span>' : '<span class="none">—</span>';
+    if(o.statusVal===3)      v = o.val ? '<span class="dur'+hotCls(o.ms,hotMs)+'" title="'+escapeHtml(fmt(o.start)+'  →  '+fmt(o.end))+'">'+o.val+'</span>' : '<span class="none">—</span>';
     else if(o.statusVal===4) v = '<span class="tag bad" title="'+escapeHtml(o.status)+'">REJ</span>';
     else                     v = '<span class="tag markup" title="'+escapeHtml(o.status||'Pending')+'">PDNG</span>';
     return '<div class="nowrap"><span class="estlbl">'+lbl+'</span> '+v+'</div>'; };
@@ -689,10 +691,10 @@ function render(){
       <td class="qno">${ r.quoteId ? '<a href="'+quoteUrl(r.quoteId)+'" target="_blank" rel="noopener">'+escapeHtml(r.quoteNo)+'</a>' : escapeHtml(r.quoteNo) }</td>
       <td>${dcell(r.createdDateTime)}</td>
       <td>${ r.quoteType ? tintTag(r.quoteType, quoteTypeColor(r.quoteType)) : '<span class="none">—</span>' }</td>
-      <td>${pend(durCell(r.drafting,sk[0]),0)}</td>
-      <td>${pend(estCell(r.est, sk[1] || !!(r.rfq && r.rfq.a)),1)}</td>
-      <td>${pend(durCell(r.rfq,sk[2]),2)}</td>
-      <td>${pend(apprCell(r.internal,sk[3],true),3)}</td>
+      <td>${pend(durCell(r.drafting,sk[0],3*36e5),0)}</td>
+      <td>${pend(estCell(r.est, sk[1] || !!(r.rfq && r.rfq.a), 3*36e5),1)}</td>
+      <td>${pend(durCell(r.rfq,sk[2],3*36e5),2)}</td>
+      <td>${pend(apprCell(r.internal,sk[3],true,30*6e4),3)}</td>
       <td>${pend(apprCell(r.customer,sk[4],true),4)}</td>
       <td>${pend(durCell(r.workExec,sk[5]),5)}</td>
       <td>${ r.ageingMs!=null
