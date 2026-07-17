@@ -19,7 +19,7 @@
     --shadow:0 4px 14px rgba(31,70,107,.08); --shadow-lg:0 12px 32px rgba(31,70,107,.16);
   }
   *{box-sizing:border-box}
-  body{margin:0;font-family:'Segoe UI',Arial,'Helvetica Neue',sans-serif;background:var(--bg);color:var(--ink);line-height:1.4;}
+  body{margin:0;font-family:Calibri,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.4;}
   .login-card{background:#fff;border-radius:18px;padding:34px 38px;width:380px;text-align:center;box-shadow:var(--shadow-lg);}
   .login-card img{height:46px;margin-bottom:16px;}
   .login-card h1{font-size:19px;margin:4px 0 2px;color:var(--slate);font-weight:700;}
@@ -172,11 +172,11 @@
   @keyframes splashRise{0%{transform:translateY(28px);opacity:0;}100%{transform:translateY(0);opacity:1;}}
   .strive-logo-card{background:#fff;padding:18px 32px;border-radius:20px;box-shadow:0 14px 36px rgba(0,0,0,0.45),0 2px 8px rgba(37,99,235,0.15);display:flex;flex-direction:column;align-items:center;gap:2px;min-width:240px;}
   .strive-logo-card .strive-svg{width:80px;height:50px;display:block;}
-  .strive-logo-card .strive-word{font-family:'Segoe UI',Arial,sans-serif;color:#1F466B;font-weight:800;font-size:24px;letter-spacing:3px;margin-top:6px;}
+  .strive-logo-card .strive-word{font-family:Calibri,'Segoe UI',Arial,sans-serif;color:#1F466B;font-weight:800;font-size:24px;letter-spacing:3px;margin-top:6px;}
   .strive-logo-card .strive-group{font-size:9px;color:#618FB4;letter-spacing:4px;font-weight:700;margin-top:2px;}
   .splash-card{background:linear-gradient(180deg, rgba(15,40,75,0.78) 0%, rgba(10,28,55,0.85) 100%);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(97,143,180,0.22);border-radius:22px;padding:36px 48px;box-shadow:0 30px 70px rgba(0,0,0,0.55), inset 0 0 100px rgba(20,90,149,0.08);min-width:480px;max-width:540px;text-align:center;color:#E2E8F0;}
   .splash-sub-tag{display:inline-block;color:#2DD4FF;font-size:10px;font-weight:600;letter-spacing:9px;padding-bottom:4px;}
-  .splash-title{color:#fff;font-size:32px;font-weight:700;margin:10px 0 12px;letter-spacing:.2px;line-height:1.15;font-family:'Segoe UI',Arial,sans-serif;}
+  .splash-title{color:#fff;font-size:32px;font-weight:700;margin:10px 0 12px;letter-spacing:.2px;line-height:1.15;font-family:Calibri,'Segoe UI',Arial,sans-serif;}
   .splash-blurb{color:#8FA3BD;font-size:13px;margin-bottom:4px;font-weight:400;}
   .splash-divider{height:1px;width:90px;margin:18px auto 22px;background:linear-gradient(90deg, transparent, #E8A33D, transparent);}
   .splash-signin{width:100%;padding:16px 24px;border-radius:14px;background:linear-gradient(135deg,#2563EB 0%,#3B82F6 50%,#1E40AF 100%);color:#fff;border:none;cursor:pointer;font-family:inherit;font-size:16px;font-weight:800;letter-spacing:2px;box-shadow:0 10px 28px rgba(37,99,235,0.45), inset 0 -2px 6px rgba(0,0,0,0.18);transition:all .2s ease;display:flex;align-items:center;justify-content:center;gap:12px;position:relative;overflow:hidden;}
@@ -269,7 +269,7 @@
   <span class="pill" id="userPill" style="display:none"></span>
   <button class="hbtn" onclick="refreshAll(true)" id="refreshBtn" style="display:none">↻ Refresh</button>
   <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
-  <span class="ver">v40</span>
+  <span class="ver">v41</span>
 </header>
 <div class="controls" id="controls" style="display:none">
   <div class="ctrl"><label>From</label><input type="date" id="fromDate" onchange="refreshAll()"></div>
