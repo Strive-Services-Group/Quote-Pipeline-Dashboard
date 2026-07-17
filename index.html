@@ -19,7 +19,9 @@
     --shadow:0 4px 14px rgba(31,70,107,.08); --shadow-lg:0 12px 32px rgba(31,70,107,.16);
   }
   *{box-sizing:border-box}
-  body{margin:0;font-family:Arial,'Helvetica Neue',Helvetica,sans-serif;background:var(--bg);color:var(--ink);line-height:1.4;}
+  @font-face{font-family:'CandaraMix';src:local('Candara');} /* letters + everything else */
+  @font-face{font-family:'CandaraMix';src:local('Cambria Math');unicode-range:U+0030-0039;} /* digits 0-9 only */
+  body{margin:0;font-family:'CandaraMix','Candara','Aptos','Gotham','Cairo','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--ink);line-height:1.4;}
   .login-card{background:#fff;border-radius:18px;padding:34px 38px;width:380px;text-align:center;box-shadow:var(--shadow-lg);}
   .login-card img{height:46px;margin-bottom:16px;}
   .login-card h1{font-size:19px;margin:4px 0 2px;color:var(--slate);font-weight:700;}
@@ -104,7 +106,7 @@
   .tsub2{font-size:10px;color:var(--muted);margin-top:1px;}
   .tavg{font-size:12px;color:var(--slate);font-weight:800;white-space:nowrap;}
   .tavg .tsub2{display:inline;font-weight:600;}
-  .donut{width:56px;height:56px;flex:0 0 56px;margin-left:auto;}
+  .donut{width:40px;height:40px;flex:0 0 40px;margin-left:auto;}
   .tdist{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;margin-left:6px;}
   .tdist .distbar{margin:0;}
   .tdist .dleg{padding:0;}
@@ -172,11 +174,11 @@
   @keyframes splashRise{0%{transform:translateY(28px);opacity:0;}100%{transform:translateY(0);opacity:1;}}
   .strive-logo-card{background:#fff;padding:18px 32px;border-radius:20px;box-shadow:0 14px 36px rgba(0,0,0,0.45),0 2px 8px rgba(37,99,235,0.15);display:flex;flex-direction:column;align-items:center;gap:2px;min-width:240px;}
   .strive-logo-card .strive-svg{width:80px;height:50px;display:block;}
-  .strive-logo-card .strive-word{font-family:Arial,'Helvetica Neue',sans-serif;color:#1F466B;font-weight:800;font-size:24px;letter-spacing:3px;margin-top:6px;}
+  .strive-logo-card .strive-word{font-family:'Aptos','Inter',sans-serif;color:#1F466B;font-weight:800;font-size:24px;letter-spacing:3px;margin-top:6px;}
   .strive-logo-card .strive-group{font-size:9px;color:#618FB4;letter-spacing:4px;font-weight:700;margin-top:2px;}
   .splash-card{background:linear-gradient(180deg, rgba(15,40,75,0.78) 0%, rgba(10,28,55,0.85) 100%);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(97,143,180,0.22);border-radius:22px;padding:36px 48px;box-shadow:0 30px 70px rgba(0,0,0,0.55), inset 0 0 100px rgba(20,90,149,0.08);min-width:480px;max-width:540px;text-align:center;color:#E2E8F0;}
   .splash-sub-tag{display:inline-block;color:#2DD4FF;font-size:10px;font-weight:600;letter-spacing:9px;padding-bottom:4px;}
-  .splash-title{color:#fff;font-size:32px;font-weight:700;margin:10px 0 12px;letter-spacing:.2px;line-height:1.15;font-family:Arial,'Helvetica Neue',sans-serif;}
+  .splash-title{color:#fff;font-size:32px;font-weight:700;margin:10px 0 12px;letter-spacing:.2px;line-height:1.15;font-family:'Aptos','Inter',sans-serif;}
   .splash-blurb{color:#8FA3BD;font-size:13px;margin-bottom:4px;font-weight:400;}
   .splash-divider{height:1px;width:90px;margin:18px auto 22px;background:linear-gradient(90deg, transparent, #E8A33D, transparent);}
   .splash-signin{width:100%;padding:16px 24px;border-radius:14px;background:linear-gradient(135deg,#2563EB 0%,#3B82F6 50%,#1E40AF 100%);color:#fff;border:none;cursor:pointer;font-family:inherit;font-size:16px;font-weight:800;letter-spacing:2px;box-shadow:0 10px 28px rgba(37,99,235,0.45), inset 0 -2px 6px rgba(0,0,0,0.18);transition:all .2s ease;display:flex;align-items:center;justify-content:center;gap:12px;position:relative;overflow:hidden;}
@@ -269,7 +271,7 @@
   <span class="pill" id="userPill" style="display:none"></span>
   <button class="hbtn" onclick="refreshAll(true)" id="refreshBtn" style="display:none">↻ Refresh</button>
   <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
-  <span class="ver">v39</span>
+  <span class="ver">v37</span>
 </header>
 <div class="controls" id="controls" style="display:none">
   <div class="ctrl"><label>From</label><input type="date" id="fromDate" onchange="refreshAll()"></div>
@@ -664,10 +666,8 @@ const COL_FILTER_DEFS = {
          || (r.internal && r.internal.ms!=null && r.internal.ms>30*6e4)
 };
 let COL_FILTERS = {};
-let STATUS_FILTER = '';
 function toggleColFilter(k,on){ if(on) COL_FILTERS[k]=1; else delete COL_FILTERS[k]; render(); }
-function clearColFilters(){ COL_FILTERS = {}; STATUS_FILTER = ''; render(); }
-function setStatusFilter(v){ STATUS_FILTER = v; render(); }
+function clearColFilters(){ COL_FILTERS = {}; render(); }
 
 // Where is this quote STUCK? First stage that is neither finished nor skipped (in-progress counts as stuck).
 // Stage indexes: 0 drafting, 1 estimation, 2 rfq, 3 internal, 4 customer, 5 scheduling, 6 workExec. Returns 7 = all done, awaiting "Posted WorkOrder".
@@ -695,7 +695,6 @@ function render(){
   let rows = activeRows();
   if(q){ rows = rows.filter(r => (r.quoteNo+' '+r._name+' '+r._prNo+' '+r._prLoc+' '+r.dept+' '+r.status+' '+r._woName).toLowerCase().includes(q)); }
   Object.keys(COL_FILTERS).forEach(k=>{ const p=COL_FILTER_DEFS[k]; if(p) rows = rows.filter(p); });
-  if(STATUS_FILTER) rows = rows.filter(r=> (r.status||'')===STATUS_FILTER);
   const tb = document.getElementById('tbody');
   document.getElementById('emptyMsg').style.display = rows.length ? 'none' : '';
   tb.innerHTML = rows.map(r=>{
@@ -758,7 +757,7 @@ function renderCountRow(rows){
   const typeCell = '<th><span class="cnum">'+pre+'</span><span class="clbl"> pre</span> · <span class="cnum">'+insp+'</span><span class="clbl"> insp</span></th>';
   const slaN = rows.filter(COL_FILTER_DEFS.sla).length;
   const totalCell = '<th><label class="cfl" title="Show everything — clears all ticked filters">'
-    + '<input type="checkbox" onchange="clearColFilters()"'+((Object.keys(COL_FILTERS).length||STATUS_FILTER)?'':' checked')+'>'
+    + '<input type="checkbox" onchange="clearColFilters()"'+(Object.keys(COL_FILTERS).length?'':' checked')+'>'
     + '<span class="cnum">'+n+'</span> <span class="clbl">quotes</span></label></th>';
   const slaCell = '<th><label class="cfl" title="Show only quotes that breached an SLA limit (red timings)">'
     + '<input type="checkbox" onchange="toggleColFilter(\'sla\',this.checked)"'+(COL_FILTERS['sla']?' checked':'')+'>'
@@ -775,14 +774,7 @@ function renderCountRow(rows){
     + cell(c.sch,'scheduled','sch') /* Scheduling Time */
     + cell(c.we,'executed','we')  /* Work Execution */
     + blank                 /* Total Ageing */
-    + (function(){          /* Status — dropdown filter */
-        const sts = [...new Set(DATA.map(r=>r.status).filter(Boolean))].sort();
-        return '<th><select onchange="setStatusFilter(this.value)" title="Filter the table by quote status" '
-          + 'style="font-family:inherit;font-size:10.5px;font-weight:700;color:var(--ocean);background:#fff;border:1px solid var(--line);border-radius:8px;padding:2px 6px;max-width:160px;">'
-          + '<option value="">All Statuses</option>'
-          + sts.map(s=>'<option value="'+escapeHtml(s)+'"'+(STATUS_FILTER===s?' selected':'')+'>'+escapeHtml(s)+'</option>').join('')
-          + '</select></th>';
-      })();
+    + blank;                /* Status */
   syncStickyTops();
 }
 // Freeze the table header: the table scrolls inside .wrap (its height capped to the window),
