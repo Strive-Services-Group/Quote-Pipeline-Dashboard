@@ -19,7 +19,7 @@
     --shadow:0 4px 14px rgba(31,70,107,.08); --shadow-lg:0 12px 32px rgba(31,70,107,.16);
   }
   *{box-sizing:border-box}
-  body{margin:0;font-family:Calibri,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.4;}
+  body{margin:0;font-family:Calibri,'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.4;zoom:1.06;} /* Calibri runs small at the same px — 6% zoom compensates */
   .login-card{background:#fff;border-radius:18px;padding:34px 38px;width:380px;text-align:center;box-shadow:var(--shadow-lg);}
   .login-card img{height:46px;margin-bottom:16px;}
   .login-card h1{font-size:19px;margin:4px 0 2px;color:var(--slate);font-weight:700;}
@@ -269,7 +269,7 @@
   <span class="pill" id="userPill" style="display:none"></span>
   <button class="hbtn" onclick="refreshAll(true)" id="refreshBtn" style="display:none">↻ Refresh</button>
   <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
-  <span class="ver">v41</span>
+  <span class="ver">v42</span>
 </header>
 <div class="controls" id="controls" style="display:none">
   <div class="ctrl"><label>From</label><input type="date" id="fromDate" onchange="refreshAll()"></div>
