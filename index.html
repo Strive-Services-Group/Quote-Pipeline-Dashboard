@@ -130,13 +130,13 @@
   .split-row .seg .seglbl{display:flex;align-items:center;justify-content:center;gap:4px;font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-top:6px;}
   .wrap{padding:0 30px 46px;margin-top:14px;overflow:auto;} /* NO top padding: scrolled rows would show through it above the pinned header */
   table{border-collapse:separate;border-spacing:0;width:100%;font-size:12.5px;background:#fff;border:1px solid var(--line);border-radius:13px;overflow:hidden;overflow:clip;box-shadow:var(--shadow);} /* overflow:clip keeps rounded corners WITHOUT breaking the sticky header (hidden would trap it) */
-  thead tr.countrow th{position:sticky;top:56px;z-index:2;background:#EAF1F8;color:var(--ocean);text-align:left;padding:3px 12px;white-space:nowrap;font-weight:800;font-size:11px;letter-spacing:.03em;border-bottom:1px solid var(--line);}
+  thead tr.countrow th{position:sticky;top:56px;z-index:2;background:#EAF1F8;color:var(--ocean);text-align:left;padding:3px 8px;white-space:nowrap;font-weight:800;font-size:11px;letter-spacing:.03em;border-bottom:1px solid var(--line);}
   thead tr.countrow th .cnum{font-size:12px;font-weight:800;color:var(--ocean);}
   thead tr.countrow th .clbl{font-size:11px;font-weight:800;color:var(--ocean);}
-  thead tr.headrow th{position:sticky;top:0;z-index:3;background:var(--ocean);color:#fff;text-align:left;vertical-align:top;padding:9px 12px;white-space:nowrap;font-weight:700;border-right:1px solid rgba(255,255,255,.14);line-height:1.35;}
-  thead tr.headrow th .small.muted{color:rgba(255,255,255,.72);font-weight:500;}
+  thead tr.headrow th{position:sticky;top:0;z-index:3;background:var(--ocean);color:#fff;text-align:left;vertical-align:top;padding:9px 8px;white-space:nowrap;font-weight:700;border-right:1px solid rgba(255,255,255,.14);line-height:1.35;}
+  thead tr.headrow th .small.muted{color:rgba(255,255,255,.72);font-weight:500;white-space:normal;display:inline-block;max-width:140px;line-height:1.25;} /* subtitles may wrap so columns stay narrow */
   thead tr.headrow th .thi{margin-right:6px;}
-  tbody td{padding:5px 12px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);vertical-align:middle;}
+  tbody td{padding:5px 8px;border-bottom:1px solid var(--line);border-right:1px solid var(--line);vertical-align:middle;}
   tbody tr:nth-child(even){background:#FAFBFD;}
   tbody tr:hover{background:#EEF4FB;}
   .qno a{font-weight:700;color:var(--ocean);text-decoration:none;border-bottom:1px dotted var(--steel);white-space:nowrap;}
@@ -269,7 +269,7 @@
   <span class="pill" id="userPill" style="display:none"></span>
   <button class="hbtn" onclick="refreshAll(true)" id="refreshBtn" style="display:none">↻ Refresh</button>
   <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
-  <span class="ver">v35</span>
+  <span class="ver">v36</span>
 </header>
 <div class="controls" id="controls" style="display:none">
   <div class="ctrl"><label>From</label><input type="date" id="fromDate" onchange="refreshAll()"></div>
@@ -657,10 +657,15 @@ const COL_FILTER_DEFS = {
   ia:  r => r.internal && r.internal.status,
   ca:  r => r.customer && r.customer.status,
   sch: r => r.scheduling && r.scheduling.val!=null,
-  we:  r => r.workExec && r.workExec.val!=null
+  we:  r => r.workExec && r.workExec.val!=null,
+  sla: r => (r.drafting && r.drafting.ms!=null && r.drafting.ms>3*36e5)
+         || (r.est && [r.est.proc,r.est.ops,r.est.other].some(o=>o && o.ms!=null && o.ms>3*36e5))
+         || (r.rfq && r.rfq.ms!=null && r.rfq.ms>3*36e5)
+         || (r.internal && r.internal.ms!=null && r.internal.ms>30*6e4)
 };
 let COL_FILTERS = {};
 function toggleColFilter(k,on){ if(on) COL_FILTERS[k]=1; else delete COL_FILTERS[k]; render(); }
+function clearColFilters(){ COL_FILTERS = {}; render(); }
 
 // Where is this quote STUCK? First stage that is neither finished nor skipped (in-progress counts as stuck).
 // Stage indexes: 0 drafting, 1 estimation, 2 rfq, 3 internal, 4 customer, 5 scheduling, 6 workExec. Returns 7 = all done, awaiting "Posted WorkOrder".
@@ -705,7 +710,9 @@ function render(){
       <td>${pend(apprCell(r.internal,sk[3],true,30*6e4),3)}</td>
       <td>${pend(apprCell(r.customer,sk[4],true),4)}</td>
       <td>${pend(durCell(r.scheduling,sk[5]),5)}</td>
-      <td>${pend(durCell(r.workExec,sk[6]),6)}${ (/scheduled\s*work\s*order/i.test(r.status||'') && r._plannedStart) ? ' <span class="small nowrap" style="color:var(--muted);font-weight:700;" title="Booking planned start: '+escapeHtml(fmt(r._plannedStart))+'">('+fmtShort(r._plannedStart)+')</span>' : '' }</td>
+      <td>${ (/scheduled\s*work\s*order/i.test(r.status||'') && r._plannedStart)
+            ? '<b class="nowrap" style="color:var(--ocean);" title="Booking planned start: '+escapeHtml(fmt(r._plannedStart))+'">PD ('+fmtShort(r._plannedStart)+')</b>'
+            : pend(durCell(r.workExec,sk[6]),6) }</td>
       <td>${ r.ageingMs!=null
             ? ((r._finalDone && r._endJob)
                 ? '<b class="nowrap">'+fmtDaysHrs(r.ageingMs)+'</b> <span class="small nowrap" style="font-weight:700;color:var(--muted);" title="End Job: '+escapeHtml(fmt(r._endJob))+'">· '+fmtShort(r._endJob)+'</span>'
@@ -741,9 +748,16 @@ function renderCountRow(rows){
   const pre  = rows.filter(r=>/predefined/i.test(r.quoteType||'')).length;
   const insp = rows.filter(r=>/inspection/i.test(r.quoteType||'')).length;
   const typeCell = '<th><span class="cnum">'+pre+'</span><span class="clbl"> pre</span> · <span class="cnum">'+insp+'</span><span class="clbl"> insp</span></th>';
+  const slaN = rows.filter(COL_FILTER_DEFS.sla).length;
+  const totalCell = '<th><label class="cfl" title="Show everything — clears all ticked filters">'
+    + '<input type="checkbox" onchange="clearColFilters()"'+(Object.keys(COL_FILTERS).length?'':' checked')+'>'
+    + '<span class="cnum">'+n+'</span> <span class="clbl">quotes</span></label></th>';
+  const slaCell = '<th><label class="cfl" title="Show only quotes that breached an SLA limit (red timings)">'
+    + '<input type="checkbox" onchange="toggleColFilter(\'sla\',this.checked)"'+(COL_FILTERS['sla']?' checked':'')+'>'
+    + '<span class="cnum">'+slaN+'</span> <span class="clbl">SLA failed</span></label></th>';
   document.getElementById('countRow').innerHTML =
-      cell(n,'quotes')      /* Quote No */
-    + blank                 /* Created Date */
+      totalCell             /* Quote No — Total */
+    + slaCell               /* Created Date — SLA failed */
     + typeCell              /* Quote Type */
     + cell(c.dr,'drafted','dr')   /* Drafting */
     + cell(c.est,'est appr','est')/* Estimation Without PR */
