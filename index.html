@@ -276,7 +276,7 @@
   <span class="pill" id="userPill" style="display:none"></span>
   <button class="hbtn" onclick="refreshAll(true)" id="refreshBtn" style="display:none">↻ Refresh</button>
   <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
-  <span class="ver">v49</span>
+  <span class="ver">v47</span>
 </header>
 <div class="controls" id="controls" style="display:none">
   <div class="ctrl"><label>From</label><input type="date" id="fromDate" onchange="refreshAll()"></div>
@@ -375,24 +375,11 @@ async function initMsal(){
   if(!account){ const all = msalInstance.getAllAccounts(); if(all.length) account = all[0]; }
 }
 
-// Inside an iframe (e.g. embedded as a tab in another dashboard), Microsoft's login page
-// refuses to render in a frame (X-Frame-Options), so redirect-based auth can't work there.
-// Detect framing and use POPUP auth instead; standalone use keeps the redirect flow.
-const IS_FRAMED = (function(){ try{ return window.self !== window.top; }catch(e){ return true; } })();
-
 async function signIn(){
   const err=document.getElementById('loginErr'); err.style.display='none';
   try{
     await initMsal();
-    if(!account){
-      if(IS_FRAMED){
-        const r = await msalInstance.loginPopup({ scopes:['User.Read', CRM_SCOPE] }); // popup works inside a frame
-        if(r && r.account) account = r.account;
-        if(!account){ const all = msalInstance.getAllAccounts(); if(all.length) account = all[0]; }
-      } else {
-        await msalInstance.loginRedirect({ scopes:['User.Read', CRM_SCOPE] }); return; // full-page redirect, no popup
-      }
-    }
+    if(!account){ await msalInstance.loginRedirect({ scopes:['User.Read', CRM_SCOPE] }); return; } // full-page redirect, no popup
     await enterApp();
   }catch(e){ err.textContent = e.message || String(e); err.style.display='block'; }
 }
@@ -400,10 +387,7 @@ async function signIn(){
 async function getToken(){
   const req = { scopes:[CRM_SCOPE], account };
   try{ const r = await msalInstance.acquireTokenSilent(req); return r.accessToken; }
-  catch(e){
-    if(IS_FRAMED){ const r = await msalInstance.acquireTokenPopup(req); return r.accessToken; } // framed → popup, not redirect
-    await msalInstance.acquireTokenRedirect(req); return null; // silent failed → re-auth via redirect
-  }
+  catch(e){ await msalInstance.acquireTokenRedirect(req); return null; } // silent failed → re-auth via redirect (no popup)
 }
 
 function setDefaultDates(){
@@ -423,7 +407,7 @@ async function enterApp(){
   refreshTimer = setInterval(()=>refreshAll(true).catch(()=>{}), 2*60*1000);
 }
 
-function signOut(){ try{ if(IS_FRAMED) msalInstance.logoutPopup(); else msalInstance.logoutRedirect(); }catch(e){ location.reload(); } }
+function signOut(){ try{ msalInstance.logoutRedirect(); }catch(e){ location.reload(); } }
 
 async function dvGet(path){
   const token = crmToken;
@@ -1139,38 +1123,9 @@ function dismissSplash(){
 }
 
 /* ============================ BOOT ============================ */
-// When embedded in another dashboard (same Microsoft tenant), sign in SILENTLY using the
-// parent's already-signed-in account — no splash, no click. Relies on the shared Azure AD
-// session (ssoSilent uses a hidden prompt=none request). Falls back to the splash+popup if it can't.
-async function trySsoSilent(hint){
-  try{
-    const req = { scopes:[CRM_SCOPE] };
-    if(hint) req.loginHint = hint;
-    const r = await msalInstance.ssoSilent(req);
-    if(r && r.account){ account = r.account; return true; }
-  }catch(e){ /* silent SSO unavailable → splash/popup remains as fallback */ }
-  return false;
-}
-// The parent frame (HS Pipeline) posts the signed-in user's email so we can silently SSO.
-window.addEventListener('message', async function(ev){
-  try{
-    const host = new URL(ev.origin).hostname;
-    if(!/(^|\.)striveservicesgroup\.com$/i.test(host)) return; // only trust our own parent origins
-  }catch(e){ return; }
-  const d = ev.data || {};
-  if(d.type==='ssg-sso-hint' && d.email && !account){
-    try{ await initMsal(); }catch(e){}
-    if(!account && await trySsoSilent(d.email)){ await enterApp(); }
-  }
-});
-
 initSplash();
 (async function(){
-  try{
-    await initMsal();
-    if(!account && IS_FRAMED){ await trySsoSilent(); } // attempt silent sign-in immediately when embedded
-    if(account){ await enterApp(); }
-  }catch(e){}
+  try{ await initMsal(); if(account){ await enterApp(); } }catch(e){}
 })();
 </script>
 </body>
