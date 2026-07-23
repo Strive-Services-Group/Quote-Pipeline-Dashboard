@@ -72,8 +72,11 @@
   .blbl.bsym{flex:0 0 auto;font-size:13px;color:#9aa7b5;}
   .brow.cur .blbl.bsym{color:var(--c);}
   .cfl{display:inline-flex;align-items:center;gap:5px;cursor:pointer;}
-  .cfl input[type=checkbox]{width:12px;height:12px;accent-color:#E8A33D;cursor:pointer;margin:0;}
+  .cfl input[type=checkbox]{width:12px;height:12px;accent-color:#DA1F26;cursor:pointer;margin:0;}
   .dur.hot{color:#C0392B;background:#FCEBEB;border-radius:8px;padding:2px 8px;font-weight:800;} /* ageing over the stage's limit */
+  .qp-load{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:800;color:var(--ocean);}
+  .qp-spin{width:14px;height:14px;border:2px solid #cfe0f0;border-top-color:var(--ocean);border-radius:50%;animation:qpspin .7s linear infinite;display:inline-block;}
+  @keyframes qpspin{to{transform:rotate(360deg)}}
   .brow:first-of-type{border-top:none;}
   .brow:hover{background:#f5f9fd;}
   .brow.cur:hover{background:linear-gradient(180deg,#e9f2fc,#dcebf8);}
@@ -130,11 +133,11 @@
   .split-row .seg .seglbl{display:flex;align-items:center;justify-content:center;gap:4px;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-top:6px;}
   .wrap{padding:0 30px 46px;margin-top:14px;overflow:auto;} /* NO top padding: scrolled rows would show through it above the pinned header */
   table{border-collapse:separate;border-spacing:0;width:100%;font-size:13.5px;background:#fff;border:1px solid var(--line);border-radius:13px;overflow:hidden;overflow:clip;box-shadow:var(--shadow);} /* overflow:clip keeps rounded corners WITHOUT breaking the sticky header (hidden would trap it) */
-  thead tr.countrow th{position:sticky;top:56px;z-index:2;background:#EAF1F8;color:var(--ocean);text-align:left;padding:3px 8px;white-space:nowrap;font-weight:800;font-size:12px;letter-spacing:.03em;border-bottom:1px solid var(--line);box-shadow:-1px 0 0 #EAF1F8,1px 0 0 #EAF1F8;}
-  thead tr.countrow th .cnum{font-size:13px;font-weight:800;color:var(--ocean);}
-  thead tr.countrow th .clbl{font-size:12px;font-weight:800;color:var(--ocean);}
-  thead tr.headrow th{position:sticky;top:0;z-index:3;background:var(--ocean);color:#fff;text-align:left;vertical-align:top;padding:9px 8px;white-space:nowrap;font-weight:700;border-right:1px solid rgba(255,255,255,.14);line-height:1.35;box-shadow:-1px 0 0 var(--ocean),1px 0 0 var(--ocean);} /* shadows bridge sub-pixel seams caused by zoom */
-  thead tr.headrow th .small.muted{color:rgba(255,255,255,.72);font-weight:500;white-space:normal;display:inline-block;max-width:140px;line-height:1.25;} /* subtitles may wrap so columns stay narrow */
+  thead tr.countrow th{position:sticky;top:56px;z-index:2;background:#FBEAEA;color:#DA1F26;text-align:left;padding:3px 8px;white-space:nowrap;font-weight:800;font-size:12px;letter-spacing:.03em;border-bottom:1px solid var(--line);box-shadow:-1px 0 0 #FBEAEA,1px 0 0 #FBEAEA;}
+  thead tr.countrow th .cnum{font-size:13px;font-weight:800;color:#DA1F26;}
+  thead tr.countrow th .clbl{font-size:12px;font-weight:800;color:#DA1F26;}
+  thead tr.headrow th{position:sticky;top:0;z-index:3;background:#DA1F26;color:#fff;text-align:left;vertical-align:top;padding:9px 8px;white-space:nowrap;font-weight:700;border-right:1px solid rgba(255,255,255,.16);line-height:1.35;box-shadow:-1px 0 0 #DA1F26,1px 0 0 #DA1F26;} /* shadows bridge sub-pixel seams caused by zoom */
+  thead tr.headrow th .small.muted{color:#FFE7E8;font-weight:600;white-space:normal;display:inline-block;max-width:140px;line-height:1.25;} /* subtitles may wrap so columns stay narrow */
   thead tr.headrow th .thi{margin-right:6px;}
   .wrap>table{table-layout:fixed;} /* fixed columns: widths never jump when filters change the content */
   .wrap>table thead tr.headrow th:nth-child(1){width:6%}   .wrap>table thead tr.headrow th:nth-child(2){width:9%}
@@ -276,7 +279,7 @@
   <span class="pill" id="userPill" style="display:none"></span>
   <button class="hbtn" onclick="refreshAll(true)" id="refreshBtn" style="display:none">↻ Refresh</button>
   <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
-  <span class="ver">v47</span>
+  <span class="ver">v54</span>
 </header>
 <div class="controls" id="controls" style="display:none">
   <div class="ctrl"><label>From</label><input type="date" id="fromDate" onchange="refreshAll()"></div>
@@ -288,6 +291,7 @@
     <select id="typeSel" onchange="applyFilter()"><option value="">All Types</option><option value="predefined">Predefined</option><option value="inspection">Inspection</option></select>
   </div>
   <div class="ctrl"><input type="text" id="search" placeholder="Search quote no, project, PR, status…" oninput="render()"></div>
+  <div class="ctrl" style="margin-left:auto"><span id="qpLoad" class="qp-load" style="display:none"><span class="qp-spin"></span>Refreshing…</span></div>
 </div>
 <div class="kpiPanel" id="trendKpis" style="display:none"></div>
 <div class="kpiPanel" id="procKpis" style="display:none"></div>
@@ -401,8 +405,7 @@ async function enterApp(){
   ['controls','trendKpis','procKpis','wrap'].forEach(id=>document.getElementById(id).style.display='');
   ['refreshBtn','signoutBtn'].forEach(id=>document.getElementById(id).style.display='');
   const up=document.getElementById('userPill'); up.style.display=''; up.textContent = account.name || account.username || 'Signed in';
-  setDefaultDates();
-  await refreshAll();
+  qpFirstRender(); // cache-first: show last data instantly, refresh in background
   if(refreshTimer) clearInterval(refreshTimer);
   refreshTimer = setInterval(()=>refreshAll(true).catch(()=>{}), 2*60*1000);
 }
@@ -564,8 +567,30 @@ async function fetchAndJoin(fromISO, toISO){
     counts: { quotes: quotes.length, wo: Object.keys(woByQ).length, rfq: Object.keys(emailByQ).length, appr: approvals.length, pr: prRows.length } };
 }
 
-const RANGE_CACHE = new Map();
+// Keep the fetch cache on window so re-opening the tab (embedded SPA re-mounts the view) reuses it instead of refetching.
+const RANGE_CACHE = (typeof window!=='undefined' ? (window.__QP_RANGE = window.__QP_RANGE || new Map()) : new Map());
 const CACHE_TTL_MS = 5*60*1000;
+// ── Loading indicator + last-data cache (show previous data instantly, refresh in background) ──
+function qpSetLoading(on){ var el=document.getElementById('qpLoad'); if(el) el.style.display = on ? 'inline-flex' : 'none'; }
+function qpCacheSave(){
+  try{ window.__QP_DATA = { DATA:DATA, TREND_DATA:TREND_DATA, PR_ROWS:PR_ROWS, EMAIL_BY_Q:EMAIL_BY_Q, QT:QUOTE_TYPE_FIELD, at:Date.now() }; }catch(e){}
+  try{ var s = JSON.stringify(window.__QP_DATA); if(s.length < 4200000) localStorage.setItem('vqp_cache', s); }catch(e){} // persist across page reloads; skip if over quota
+}
+function qpCacheLoad(){
+  var c = (typeof window!=='undefined') ? window.__QP_DATA : null;
+  if(!c || !c.DATA){ try{ c = JSON.parse(localStorage.getItem('vqp_cache')||'null'); }catch(e){ c=null; } } // fall back to the last saved copy
+  if(!c || !c.DATA) return false;
+  DATA=c.DATA; TREND_DATA=c.TREND_DATA; PR_ROWS=c.PR_ROWS; EMAIL_BY_Q=c.EMAIL_BY_Q;
+  if(c.QT){ QUOTE_TYPE_FIELD=c.QT; QT_DETECTED=true; }
+  return true;
+}
+// Paint last-known data immediately (if any), then refresh in the background.
+function qpFirstRender(){
+  try{ setDefaultDates(); }catch(e){}
+  try{ WEEK_BOUNDS = weekBoundaries(); }catch(e){} // recompute (cache doesn't carry Date objects)
+  if(qpCacheLoad()){ try{ populateDepts(); render(); renderKpis(); }catch(e){} } // instant from cache
+  refreshAll(false); // background refresh (reuses cache if <5min, else refetch); spinner shows during network
+}
 async function cachedFetch(fromISO, toISO, force){
   const key = fromISO+'|'+toISO;
   if(!force){
@@ -578,7 +603,10 @@ async function cachedFetch(fromISO, toISO, force){
 }
 
 async function refreshAll(force){
-  setStatus('syncing…','warn');
+  // Only run when THIS dashboard is on screen. When embedded as a tab, leaving it must not let the
+  // background refresh touch other tabs — bail and cancel the auto-refresh timer if we're off-tab.
+  if(!document.getElementById('qpLoad')){ if(window.__qpTimer){ clearInterval(window.__qpTimer); window.__qpTimer=null; } return; }
+  setStatus('syncing…','warn'); qpSetLoading(true);
   try{
     crmToken = await getToken();
     if(!QT_DETECTED) await detectQuoteTypeField();
@@ -599,9 +627,10 @@ async function refreshAll(force){
     populateDepts();
     render(); renderKpis();
     setStatus('live · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), 'live');
+    qpCacheSave();
   }catch(e){
-    console.error(e); setStatus('error', 'err'); alert('Load failed: '+(e.message||e));
-  }
+    console.error(e); setStatus('error', 'err'); // no alert — background refreshes must fail quietly, last data stays on screen
+  }finally{ qpSetLoading(false); }
 }
 
 function populateDepts(){
@@ -719,7 +748,7 @@ function render(){
   if(STATUS_FILTER) rows = rows.filter(r=> (r.status||'')===STATUS_FILTER);
   const tb = document.getElementById('tbody');
   document.getElementById('emptyMsg').style.display = rows.length ? 'none' : '';
-  tb.innerHTML = rows.map(r=>{
+  function rowHtml(r){
     const sk = stageFlags(r);
     const stuck = r._finalDone ? null : stuckStageIdx(r, sk);
     const pend = (html,i)=> (stuck===i && /class="none"/.test(html)) ? tintTag('Pending','#C0392B') : html;
@@ -749,8 +778,20 @@ function render(){
             : '<span class="none">—</span>' }</td>
       <td>${ r.status ? tintTag(r.status, statusColor(r.status)) : '<span class="none">—</span>' }</td>
     </tr>`;
-  }).join('');
+  }
   renderCountRow(rows);
+  // Stream rows in small batches (first batch fills the viewport instantly, the rest paint across frames)
+  // so a ~2,500-row table never freezes the tab. A newer render() cancels an in-flight one.
+  const _tok = (window.__qpRenderTok = (window.__qpRenderTok||0) + 1);
+  tb.innerHTML = '';
+  let _i = 0;
+  (function _step(){
+    if(_tok !== window.__qpRenderTok) return;
+    let _buf = ''; const _end = Math.min(_i + 150, rows.length);
+    for(; _i < _end; _i++) _buf += rowHtml(rows[_i]);
+    if(_buf) tb.insertAdjacentHTML('beforeend', _buf);
+    if(_i < rows.length) requestAnimationFrame(_step);
+  })();
 }
 
 function renderCountRow(rows){
@@ -799,7 +840,7 @@ function renderCountRow(rows){
     + (function(){          /* Status — dropdown filter */
         const sts = [...new Set(DATA.map(r=>r.status).filter(Boolean))].sort();
         return '<th><select onchange="setStatusFilter(this.value)" title="Filter the table by quote status" '
-          + 'style="font-family:inherit;font-size:11.5px;font-weight:700;color:var(--ocean);background:#fff;border:1px solid var(--line);border-radius:8px;padding:2px 6px;max-width:160px;">'
+          + 'style="font-family:inherit;font-size:11.5px;font-weight:700;color:#DA1F26;background:#fff;border:1px solid var(--line);border-radius:8px;padding:2px 6px;max-width:160px;">'
           + '<option value="">All Statuses</option>'
           + sts.map(s=>'<option value="'+escapeHtml(s)+'"'+(STATUS_FILTER===s?' selected':'')+'>'+escapeHtml(s)+'</option>').join('')
           + '</select></th>';
