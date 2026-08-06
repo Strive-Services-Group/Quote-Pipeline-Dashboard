@@ -139,7 +139,7 @@
   thead tr.headrow th{position:sticky;top:0;z-index:3;background:#DA1F26;color:#fff;text-align:left;vertical-align:top;padding:9px 8px;white-space:nowrap;font-weight:700;border-right:1px solid rgba(255,255,255,.16);line-height:1.35;box-shadow:-1px 0 0 #DA1F26,1px 0 0 #DA1F26;} /* shadows bridge sub-pixel seams caused by zoom */
   thead tr.headrow th .small.muted{color:#FFE7E8;font-weight:600;white-space:normal;display:inline-block;max-width:140px;line-height:1.25;} /* subtitles may wrap so columns stay narrow */
   thead tr.headrow th .thi{margin-right:6px;}
-  .wrap>table{table-layout:fixed;} /* fixed columns: widths never jump when filters change the content */
+  .wrap>table{table-layout:fixed;min-width:1600px;} /* fixed columns: widths never jump when filters change the content */
   .wrap>table thead tr.headrow th:nth-child(1){width:6%}   .wrap>table thead tr.headrow th:nth-child(2){width:9%}
   .wrap>table thead tr.headrow th:nth-child(3){width:6.5%} .wrap>table thead tr.headrow th:nth-child(4){width:8.5%}
   .wrap>table thead tr.headrow th:nth-child(5){width:9.5%} .wrap>table thead tr.headrow th:nth-child(6){width:8%}
@@ -286,6 +286,9 @@
   <div class="ctrl"><label>To</label><input type="date" id="toDate" onchange="refreshAll()"></div>
   <div class="ctrl"><label>Dept</label>
     <select id="deptSel" onchange="applyFilter()"><option value="">All Departments</option></select>
+  </div>
+  <div class="ctrl"><label>Project</label>
+    <select id="projSel" onchange="applyFilter()"><option value="">All Projects</option></select>
   </div>
   <div class="ctrl"><label>Type</label>
     <select id="typeSel" onchange="applyFilter()"><option value="">All Types</option><option value="predefined">Predefined</option><option value="inspection">Inspection</option></select>
@@ -588,7 +591,7 @@ function qpCacheLoad(){
 function qpFirstRender(){
   try{ setDefaultDates(); }catch(e){}
   try{ WEEK_BOUNDS = weekBoundaries(); }catch(e){} // recompute (cache doesn't carry Date objects)
-  if(qpCacheLoad()){ try{ populateDepts(); render(); renderKpis(); }catch(e){} } // instant from cache
+  if(qpCacheLoad()){ try{ populateDepts(); populateProjects(); render(); renderKpis(); }catch(e){} } // instant from cache
   refreshAll(false); // background refresh (reuses cache if <5min, else refetch); spinner shows during network
 }
 async function cachedFetch(fromISO, toISO, force){
@@ -625,6 +628,7 @@ async function refreshAll(force){
     PR_ROWS = tableRes.prRows || [];
     EMAIL_BY_Q = tableRes.emailByQ || {};
     populateDepts();
+    populateProjects();
     render(); renderKpis();
     setStatus('live · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), 'live');
     qpCacheSave();
@@ -639,17 +643,29 @@ function populateDepts(){
   sel.innerHTML='<option value="">All Departments</option>'+depts.map(d=>'<option value="'+escapeHtml(d)+'">'+escapeHtml(d)+'</option>').join('');
   if(depts.includes(cur)) sel.value=cur;
 }
+function populateProjects(){
+  const sel=document.getElementById('projSel'); if(!sel) return; const cur=sel.value;
+  const projs=[...new Set(DATA.concat(TREND_DATA).map(r=>r._prLoc).filter(Boolean))].sort();
+  sel.innerHTML='<option value="">All Projects</option>'+projs.map(d=>'<option value="'+escapeHtml(d)+'">'+escapeHtml(d)+'</option>').join('');
+  if(projs.includes(cur)) sel.value=cur;
+}
 function typeMatch(r){
   const el=document.getElementById('typeSel'); const v=el?el.value:'';
   return !v || new RegExp(v,'i').test(r.quoteType||'');
 }
 function activeRows(){
   const dept=document.getElementById('deptSel').value;
-  return (dept ? DATA.filter(r=>r.dept===dept) : DATA).filter(typeMatch);
+  const projEl=document.getElementById('projSel'); const proj=projEl?projEl.value:'';
+  let rows = dept ? DATA.filter(r=>r.dept===dept) : DATA;
+  if(proj) rows = rows.filter(r=>(r._prLoc||'')===proj);
+  return rows.filter(typeMatch);
 }
 function activeTrendRows(){
   const dept=document.getElementById('deptSel').value;
-  return (dept ? TREND_DATA.filter(r=>r.dept===dept) : TREND_DATA).filter(typeMatch);
+  const projEl=document.getElementById('projSel'); const proj=projEl?projEl.value:'';
+  let rows = dept ? TREND_DATA.filter(r=>r.dept===dept) : TREND_DATA;
+  if(proj) rows = rows.filter(r=>(r._prLoc||'')===proj);
+  return rows.filter(typeMatch);
 }
 function applyFilter(){ renderKpis(); render(); }
 
@@ -676,6 +692,7 @@ function mainStatusCls(s){ s=(s||'').toLowerCase();
 
 function hashStr(s){ let h=0; s=String(s||''); for(let i=0;i<s.length;i++){ h=(h*31+s.charCodeAt(i))>>>0; } return h; }
 const STATUS_PALETTE = ['#145A95','#7E57C2','#2E8B57','#E8A33D','#C0392B'];
+function gateText(s){ s=String(s==null?'':s).trim(); return s.replace(/^gate(?=[\s:.\-]|\d)[\s:.\-]*/i,'').trim()||s; }
 function statusColor(s){ if(/posted\s*work\s*order/i.test(s)) return '#2E8B57'; /* final/completed → medium green */ return STATUS_PALETTE[ hashStr(s) % STATUS_PALETTE.length ]; }
 function quoteTypeColor(t){ t=(t||'').toLowerCase();
   if(t.indexOf('predefined')>=0) return '#145A95';
@@ -776,7 +793,7 @@ function render(){
                 ? '<b class="nowrap">'+fmtDaysHrs(r.ageingMs)+'</b> <span class="small nowrap" style="font-weight:700;color:var(--muted);" title="End Job: '+escapeHtml(fmt(r._endJob))+'">· '+fmtShort(r._endJob)+'</span>'
                 : '<span class="nowrap">'+fmtDaysHrs(r.ageingMs)+'</span>')
             : '<span class="none">—</span>' }</td>
-      <td>${ r.status ? tintTag(r.status, statusColor(r.status)) : '<span class="none">—</span>' }</td>
+      <td>${ r.status ? tintTag(gateText(r.status), statusColor(r.status)) : '<span class="none">—</span>' }</td>
     </tr>`;
   }
   renderCountRow(rows);
@@ -842,7 +859,7 @@ function renderCountRow(rows){
         return '<th><select onchange="setStatusFilter(this.value)" title="Filter the table by quote status" '
           + 'style="font-family:inherit;font-size:11.5px;font-weight:700;color:#DA1F26;background:#fff;border:1px solid var(--line);border-radius:8px;padding:2px 6px;max-width:160px;">'
           + '<option value="">All Statuses</option>'
-          + sts.map(s=>'<option value="'+escapeHtml(s)+'"'+(STATUS_FILTER===s?' selected':'')+'>'+escapeHtml(s)+'</option>').join('')
+          + sts.map(s=>'<option value="'+escapeHtml(s)+'"'+(STATUS_FILTER===s?' selected':'')+'>'+escapeHtml(gateText(s))+'</option>').join('')
           + '</select></th>';
       })();
   syncStickyTops();
