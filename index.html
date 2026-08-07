@@ -39,11 +39,15 @@
   .dot.live{background:#7CE3A6;box-shadow:0 0 0 3px rgba(124,227,166,.25);} .dot.err{background:#ff9a96;}
   .hbtn{cursor:pointer;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:#fff;border-radius:999px;padding:6px 15px;font-size:13.5px;font-weight:600;transition:.15s;font-family:inherit;}
   .hbtn:hover{background:rgba(255,255,255,.26);}
-  .controls{display:flex;align-items:center;gap:14px;margin:10px 30px 0;padding:7px 18px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);flex-wrap:wrap;}
+  .controls{display:flex;align-items:center;gap:12px;margin:10px 30px 0;padding:7px 18px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);flex-wrap:nowrap;}
+  @media(max-width:1200px){ .controls{flex-wrap:wrap;} }
   .ctrl{display:flex;align-items:center;gap:8px;}
   .ctrl label{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
-  select,input[type=text],input[type=date]{background:var(--bg);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:8px 14px;font-size:14px;font-weight:600;font-family:inherit;}
-  input[type=text]{min-width:260px;font-weight:500;}
+  select,input[type=text],input[type=date]{background:var(--bg);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:8px 12px;font-size:14px;font-weight:600;font-family:inherit;}
+  .controls select{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #deptSel{max-width:140px;} #typeSel{max-width:120px;} #projSel{max-width:160px;}
+  .ctrl.grow{flex:1 1 180px;min-width:150px;}
+  input[type=text]{width:100%;min-width:150px;font-weight:500;}
   input:focus,select:focus{outline:none;border-color:var(--steel);box-shadow:0 0 0 3px rgba(97,143,180,.15);}
   .kpiPanel{padding:13px 30px 2px;}
   .kpiPanel h3{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--slate);margin:2px 0 11px;font-weight:800;border-left:3px solid var(--steel);padding-left:10px;}
@@ -293,7 +297,7 @@
   <div class="ctrl"><label>Type</label>
     <select id="typeSel" onchange="applyFilter()"><option value="">All Types</option><option value="predefined">Predefined</option><option value="inspection">Inspection</option></select>
   </div>
-  <div class="ctrl"><input type="text" id="search" placeholder="Search quote no, project, PR, status…" oninput="render()"></div>
+  <div class="ctrl grow"><input type="text" id="search" placeholder="Search quote no, project, PR, status…" oninput="render()"></div>
   <div class="ctrl" style="margin-left:auto"><span id="qpLoad" class="qp-load" style="display:none"><span class="qp-spin"></span>Refreshing…</span></div>
 </div>
 <div class="kpiPanel" id="trendKpis" style="display:none"></div>
@@ -459,7 +463,7 @@ async function fetchAndJoin(fromISO, toISO){
   const rng = "createdon ge "+fromISO+" and createdon le "+toISO;
   const qtSel = QUOTE_TYPE_FIELD ? (','+QUOTE_TYPE_FIELD) : '';
   const [quotes, emails, approvals, wos, bookings, prJson] = await Promise.all([
-    dvGet("quotes?$select=quoteid,quotenumber,createdon,statuscode,name,_opportunityid_value"+qtSel
+    dvGet("quotes?$select=quoteid,quotenumber,createdon,statuscode,name,_opportunityid_value,_ssg_communityproject_value"+qtSel
       + "&$expand=opportunityid($select=createdon,name,ssg_textdepartment)"
       + "&$filter="+encodeURIComponent(rng)),
     dvGet("emails?$select=subject,createdon,_regardingobjectid_value"
@@ -562,6 +566,7 @@ async function fetchAndJoin(fromISO, toISO){
       status:    statusLabel,
       dept:      dept,
       _name: q.name||'', _prNo: pr?pr.purchaseRequisition:'', _prLoc: pr?(prProject(pr)||pr.location||''):'',
+      project: (q['_ssg_communityproject_value'+F]||'').trim(), /* project = quote's own Community Project column (NOT PR-derived) */
       _woName: wo?wo.msdyn_name:'', _quoteCreated:q.createdon,
       _endJob: endJob, _finalDone: finalDone
     };
@@ -645,7 +650,7 @@ function populateDepts(){
 }
 function populateProjects(){
   const sel=document.getElementById('projSel'); if(!sel) return; const cur=sel.value;
-  const projs=[...new Set(DATA.concat(TREND_DATA).map(r=>r._prLoc).filter(Boolean))].sort();
+  const projs=[...new Set(DATA.concat(TREND_DATA).map(r=>r.project).filter(Boolean))].sort();
   sel.innerHTML='<option value="">All Projects</option>'+projs.map(d=>'<option value="'+escapeHtml(d)+'">'+escapeHtml(d)+'</option>').join('');
   if(projs.includes(cur)) sel.value=cur;
 }
@@ -657,14 +662,14 @@ function activeRows(){
   const dept=document.getElementById('deptSel').value;
   const projEl=document.getElementById('projSel'); const proj=projEl?projEl.value:'';
   let rows = dept ? DATA.filter(r=>r.dept===dept) : DATA;
-  if(proj) rows = rows.filter(r=>(r._prLoc||'')===proj);
+  if(proj) rows = rows.filter(r=>(r.project||'')===proj);
   return rows.filter(typeMatch);
 }
 function activeTrendRows(){
   const dept=document.getElementById('deptSel').value;
   const projEl=document.getElementById('projSel'); const proj=projEl?projEl.value:'';
   let rows = dept ? TREND_DATA.filter(r=>r.dept===dept) : TREND_DATA;
-  if(proj) rows = rows.filter(r=>(r._prLoc||'')===proj);
+  if(proj) rows = rows.filter(r=>(r.project||'')===proj);
   return rows.filter(typeMatch);
 }
 function applyFilter(){ renderKpis(); render(); }
@@ -760,7 +765,7 @@ function stuckStageIdx(r, sk){
 function render(){
   const q = (document.getElementById('search').value||'').toLowerCase().trim();
   let rows = activeRows();
-  if(q){ rows = rows.filter(r => (r.quoteNo+' '+r._name+' '+r._prNo+' '+r._prLoc+' '+r.dept+' '+r.status+' '+r._woName).toLowerCase().includes(q)); }
+  if(q){ rows = rows.filter(r => (r.quoteNo+' '+r._name+' '+r._prNo+' '+r._prLoc+' '+r.project+' '+r.dept+' '+r.status+' '+r._woName).toLowerCase().includes(q)); }
   Object.keys(COL_FILTERS).forEach(k=>{ const p=COL_FILTER_DEFS[k]; if(p) rows = rows.filter(p); });
   if(STATUS_FILTER) rows = rows.filter(r=> (r.status||'')===STATUS_FILTER);
   const tb = document.getElementById('tbody');
