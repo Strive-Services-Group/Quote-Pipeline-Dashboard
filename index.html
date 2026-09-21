@@ -17,12 +17,16 @@
     --bg:#FAFBFD; --card:#FFFFFF; --line:#E3EBF3;
     --soft:#F6F8FB; --row:#FAFBFD; --row-hover:#EEF4FB;
     --ink:#1F2937; --muted:#64748B; --good:#2E8B57; --warn:#E8A33D; --bad:#C0392B;
+    --metric:#1F466B; --metric-strong:#0F2E49; --table-head:#1F466B; --table-count-bg:#EAF2F8;
+    --subtle-line:#EEF2F7; --donut-bg:#EEF2F7;
     --shadow:0 4px 14px rgba(31,70,107,.08); --shadow-lg:0 12px 32px rgba(31,70,107,.16);
     color-scheme:light;
   }
   html[data-theme="dark"]{
-    --bg:#111827; --card:#172033; --line:#2B3C55; --soft:#1D2A40; --row:#141E2E; --row-hover:#20334C;
-    --ink:#F6FAFF; --muted:#C2D1E1; --steel:#7FB0D7; --ocean:#4B93C8; --slate:#0E3152;
+    --bg:#0A1421; --card:#102033; --line:#35516D; --soft:#172C44; --row:#0D1B2B; --row-hover:#1D3652;
+    --ink:#F8FBFF; --muted:#B9CBE0; --steel:#8FC4EC; --ocean:#78B7E5; --slate:#1E5D8F;
+    --metric:#FFFFFF; --metric-strong:#FFFFFF; --table-head:#123C62; --table-count-bg:#172C44;
+    --subtle-line:#28445F; --donut-bg:#2A4056;
     --shadow:0 4px 16px rgba(0,0,0,.28); --shadow-lg:0 12px 34px rgba(0,0,0,.42);
     color-scheme:dark;
   }
@@ -63,7 +67,7 @@
   input[type=text]{width:100%;min-width:150px;font-weight:500;}
   input:focus,select:focus{outline:none;border-color:var(--steel);box-shadow:0 0 0 3px rgba(97,143,180,.15);}
   .kpiPanel{padding:13px 30px 2px;}
-  .kpiPanel h3{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--slate);margin:2px 0 11px;font-weight:800;border-left:3px solid var(--steel);padding-left:10px;}
+  .kpiPanel h3{font-size:13px;text-transform:uppercase;letter-spacing:.8px;color:var(--metric);margin:2px 0 11px;font-weight:800;border-left:3px solid var(--steel);padding-left:10px;}
   .cardrow{display:grid;gap:13px;grid-template-columns:repeat(7,1fr);}
   #procKpis .cardrow{grid-template-columns:repeat(4,1fr);}
   @media(max-width:1620px){ .cardrow{grid-template-columns:repeat(4,1fr);} }
@@ -77,7 +81,7 @@
   .btitle{font-size:17px;font-weight:800;color:var(--c);letter-spacing:.2px;line-height:1.15;}
   .bdesc{font-size:11.5px;color:var(--muted);margin-top:2px;}
   .baccent{height:3px;width:44%;background:var(--c);border-radius:3px;margin:2px 0 2px 16px;}
-  .brow{display:flex;align-items:center;gap:6px;padding:10px 12px;border-top:1px solid #f1f4f9;cursor:pointer;transition:background .12s;}
+  .brow{display:flex;align-items:center;gap:6px;padding:10px 12px;border-top:1px solid var(--subtle-line);cursor:pointer;transition:background .12s;}
   .bgrp{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;flex:0 0 auto;min-width:72px;border-radius:7px;padding:2px 7px;cursor:pointer;transition:filter .12s;}
   .bgrp:hover{filter:brightness(.955);}
   .bgrp b{font-size:13px;font-weight:800;line-height:1.2;letter-spacing:-.2px;white-space:nowrap;}
@@ -100,15 +104,15 @@
   .brow .blbl{font-size:12.5px;color:var(--ink);font-weight:700;white-space:nowrap;flex:1;min-width:0;}
   .bcol{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;width:40px;flex:0 0 40px;}
   .bcol.avg{width:72px;flex:0 0 72px;}
-  .bcol b{font-size:16px;font-weight:800;color:var(--slate);line-height:1.15;letter-spacing:-.3px;white-space:nowrap;}
-  .bdivider{width:1px;align-self:stretch;background:#EEF2F7;margin:4px 6px;}
+  .bcol b{font-size:16px;font-weight:800;color:var(--metric);line-height:1.15;letter-spacing:-.3px;white-space:nowrap;}
+  .bdivider{width:1px;align-self:stretch;background:var(--subtle-line);margin:4px 6px;}
   .brow.cur{background:transparent;border:1px dashed color-mix(in srgb,var(--c) 42%,var(--line));margin:7px 9px 8px;border-radius:10px;padding-top:12px;padding-bottom:13px;}
   .bcard>.brow:last-child{flex:1;} /* last (current-week) row absorbs any leftover card height — no white strip under the highlight */
   .brow.cur .blbl{color:var(--c);}
-  .brow.cur .bcol b{font-size:18px;color:var(--c);}
+  .brow.cur .bcol b{font-size:18px;color:var(--metric-strong);}
   .delta{display:inline-flex;align-items:center;gap:2px;font-size:11.5px;font-weight:800;white-space:nowrap;line-height:1.3;margin-top:1px;}
   .delta.pos{color:var(--good);} .delta.neg{color:var(--bad);} .delta.flat{color:#9aa7b5;}
-  .procHead{display:flex;align-items:center;gap:10px;margin:4px 0 12px;font-size:13px;font-weight:800;color:var(--slate);letter-spacing:.12em;text-transform:uppercase;}
+  .procHead{display:flex;align-items:center;gap:10px;margin:4px 0 12px;font-size:13px;font-weight:800;color:var(--metric);letter-spacing:.12em;text-transform:uppercase;}
   .procHead small{font-weight:600;color:var(--muted);letter-spacing:.05em;font-size:12px;}
   .procHead::after{content:'';flex:1;height:1px;background:var(--line);}
   .tcard{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:0;min-width:0;box-shadow:var(--shadow);border-top:4px solid var(--tc,var(--ocean));display:flex;flex-direction:column;transition:.16s;overflow:hidden;cursor:pointer;}
@@ -120,23 +124,23 @@
   .tcard-body.pend{display:flex;align-items:center;justify-content:space-between;gap:12px;}
   .tcard-body.pend .pend-age{margin-top:0;}
   .tcard-body2{display:flex;align-items:center;gap:12px;padding:0 15px 6px;}
-  .tbig2{font-size:26px;font-weight:800;color:var(--tc);letter-spacing:-.6px;line-height:1;}
+  .tbig2{font-size:26px;font-weight:800;color:var(--metric-strong);letter-spacing:-.6px;line-height:1;}
   .tsub2{font-size:11px;color:var(--muted);margin-top:1px;}
-  .tavg{font-size:13px;color:var(--slate);font-weight:800;white-space:nowrap;}
+  .tavg{font-size:13px;color:var(--metric);font-weight:800;white-space:nowrap;}
   .tavg .tsub2{display:inline;font-weight:600;}
   .donut{width:56px;height:56px;flex:0 0 56px;margin-left:auto;}
   .tdist{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;margin-left:6px;}
   .tdist .distbar{margin:0;}
   .tdist .dleg{padding:0;}
-  .donut .bgc{fill:none;stroke:#EEF2F7;stroke-width:4;}
+  .donut .bgc{fill:none;stroke:var(--donut-bg);stroke-width:4;}
   .donut .fgc{fill:none;stroke:var(--tc);stroke-width:4;stroke-linecap:round;}
   .donut text{font-size:9.5px;font-weight:800;fill:var(--tc);text-anchor:middle;dominant-baseline:middle;}
-  .distbar{display:flex;height:7px;border-radius:4px;overflow:hidden;background:#EEF2F7;margin:2px 15px 3px;}
+  .distbar{display:flex;height:7px;border-radius:4px;overflow:hidden;background:var(--donut-bg);margin:2px 15px 3px;}
   .distbar i{display:block;height:100%;}
   .dleg{display:flex;flex-wrap:wrap;gap:3px 12px;padding:0 15px 4px;font-size:11px;font-weight:700;color:var(--muted);}
   .dleg span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
   .dleg i{width:8px;height:8px;border-radius:2px;display:inline-block;}
-  .dleg b{color:var(--slate);}
+  .dleg b{color:var(--metric);}
   .pendchip{display:inline-flex;align-items:center;gap:5px;background:#FDF0EE;color:#C0392B;border-radius:9px;padding:3px 9px;font-size:12px;font-weight:800;white-space:nowrap;}
   .source-note{margin:0 0 10px;padding:8px 11px;border:1px solid var(--line);border-radius:10px;background:var(--soft);color:var(--muted);font-size:12.5px;font-weight:700;line-height:1.35;}
   .source-note strong{color:var(--ink);}
@@ -157,10 +161,17 @@
   .split-row .seg .seglbl{display:flex;align-items:center;justify-content:center;gap:4px;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-top:6px;}
   .wrap{padding:0 30px 46px;margin-top:14px;overflow:auto;} /* NO top padding: scrolled rows would show through it above the pinned header */
   table{border-collapse:separate;border-spacing:0;width:100%;font-size:13.5px;background:var(--card);border:1px solid var(--line);border-radius:13px;overflow:hidden;overflow:clip;box-shadow:var(--shadow);} /* overflow:clip keeps rounded corners WITHOUT breaking the sticky header (hidden would trap it) */
-  thead tr.countrow th{position:sticky;top:56px;z-index:2;background:#EAF2F8;color:var(--slate);text-align:left;padding:3px 8px;white-space:nowrap;font-weight:800;font-size:12px;letter-spacing:.03em;border-bottom:1px solid var(--line);box-shadow:-1px 0 0 #EAF2F8,1px 0 0 #EAF2F8;}
+  .load-skel{position:relative;overflow:hidden;background:linear-gradient(90deg,var(--soft),color-mix(in srgb,var(--steel) 16%,var(--card)),var(--soft));background-size:220% 100%;animation:qpshimmer 1.2s ease-in-out infinite;border-radius:8px;color:transparent!important;}
+  @keyframes qpshimmer{0%{background-position:220% 0}100%{background-position:-220% 0}}
+  .loading-card .brow{cursor:default;}
+  .loading-card:hover,.loading-card .brow:hover{transform:none;box-shadow:var(--shadow);background:transparent;}
+  .loading-line{height:14px;min-width:58px;display:inline-block;}
+  .loading-line.wide{min-width:104px;}
+  .loading-note{margin:0 30px 8px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--soft);color:var(--metric);font-size:13px;font-weight:800;}
+  thead tr.countrow th{position:sticky;top:56px;z-index:2;background:var(--table-count-bg);color:var(--metric);text-align:left;padding:3px 8px;white-space:nowrap;font-weight:800;font-size:12px;letter-spacing:.03em;border-bottom:1px solid var(--line);box-shadow:-1px 0 0 var(--table-count-bg),1px 0 0 var(--table-count-bg);}
   thead tr.countrow th .cnum{font-size:13px;font-weight:800;color:var(--ocean);}
-  thead tr.countrow th .clbl{font-size:12px;font-weight:800;color:var(--slate);}
-  thead tr.headrow th{position:sticky;top:0;z-index:3;background:var(--slate);color:#fff;text-align:left;vertical-align:top;padding:9px 8px;white-space:nowrap;font-weight:700;border-right:1px solid rgba(255,255,255,.16);line-height:1.35;box-shadow:-1px 0 0 var(--slate),1px 0 0 var(--slate);} /* shadows bridge sub-pixel seams caused by zoom */
+  thead tr.countrow th .clbl{font-size:12px;font-weight:800;color:var(--metric);}
+  thead tr.headrow th{position:sticky;top:0;z-index:3;background:var(--table-head);color:#fff;text-align:left;vertical-align:top;padding:9px 8px;white-space:nowrap;font-weight:700;border-right:1px solid rgba(255,255,255,.16);line-height:1.35;box-shadow:-1px 0 0 var(--table-head),1px 0 0 var(--table-head);} /* shadows bridge sub-pixel seams caused by zoom */
   thead tr.headrow th .small.muted{color:#DCEBF7;font-weight:600;white-space:normal;display:inline-block;max-width:140px;line-height:1.25;} /* subtitles may wrap so columns stay narrow */
   thead tr.headrow th .thi{margin-right:6px;}
   .wrap>table{table-layout:fixed;min-width:1600px;} /* fixed columns: widths never jump when filters change the content */
@@ -250,6 +261,22 @@
   .drill-q:hover{color:var(--slate);}
   .drill-ongoing{color:#B8860B;font-style:italic;}
   .drill-empty{padding:34px;text-align:center;color:var(--muted);}
+  html[data-theme="dark"] .btitle,
+  html[data-theme="dark"] .tcard .lbl{color:color-mix(in srgb,var(--c,var(--tc,#8FC4EC)) 58%,#fff);}
+  html[data-theme="dark"] .bgrp b,
+  html[data-theme="dark"] .bgrp.est2 b,
+  html[data-theme="dark"] .bgrp.pr2 b,
+  html[data-theme="dark"] .brow.cur .bgrp b{color:var(--metric-strong);}
+  html[data-theme="dark"] .tag{background:#16283D;border-color:#4D6C8D;color:#EAF6FF;}
+  html[data-theme="dark"] .tag.cust{background:rgba(46,139,87,.26);color:#BFF3D3;}
+  html[data-theme="dark"] .tag.bad{background:rgba(192,57,43,.24);color:#FFD3CF;}
+  html[data-theme="dark"] .tag.markup{background:rgba(232,163,61,.24);color:#FFE4AD;}
+  html[data-theme="dark"] .dur{color:var(--metric-strong);}
+  html[data-theme="dark"] .dur.hot{background:rgba(192,57,43,.26);color:#FFD8D4;}
+  html[data-theme="dark"] .none{color:#91A7BC;}
+  html[data-theme="dark"] .qno a,
+  html[data-theme="dark"] .qno{color:#BDE6FF;}
+  html[data-theme="dark"] .pendchip{background:rgba(232,163,61,.20);border:1px solid rgba(232,163,61,.45);color:#FFE7B7;}
 </style>
 </head>
 <body>
@@ -306,7 +333,7 @@
   <button class="hbtn theme-toggle" onclick="toggleTheme()" id="themeBtn" type="button" aria-label="Switch colour theme">Dark</button>
   <button class="hbtn" onclick="refreshAll(true)" id="refreshBtn" style="display:none">↻ Refresh</button>
   <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
-  <span class="ver">v57</span>
+  <span class="ver">v58</span>
 </header>
 <div class="controls" id="controls" style="display:none">
   <div class="ctrl"><label>From</label><input type="date" id="fromDate" onchange="refreshAll()"></div>
@@ -360,7 +387,7 @@
 const CRM_ORG    = 'https://operations-ifahr-live.crm15.dynamics.com';
 const CRM_BASE   = CRM_ORG + '/api/data/v9.2';
 const CRM_SCOPE  = CRM_ORG + '/user_impersonation';
-const DASHBOARD_VERSION = 'v57';
+const DASHBOARD_VERSION = 'v58';
 const MSAL_CONFIG = {
   auth: {
     clientId: '8a4338bf-6c78-4a70-9c62-478bb19b171c',
@@ -383,6 +410,7 @@ let EMAIL_BY_Q = {};
 let PRPO_META = null;
 let DATA_NEWEST_UTC = null;
 let DATA_READ_UTC = null;
+let DATA_FUTURE_IGNORED = null;
 let prpoDatasetCache = null;
 let prpoDatasetPromise = null;
 let SOURCE_ISSUES = [];
@@ -445,6 +473,17 @@ function sourceWarningText(issues){
   if(!n) return '';
   return n===1 ? 'could not read one source' : 'could not read '+n+' sources';
 }
+function mergeFutureIgnored(){
+  let count=0, newest=null;
+  for(let i=0;i<arguments.length;i++){
+    const info = arguments[i];
+    if(!info || !info.count) continue;
+    count += info.count;
+    const t=ms(info.newestUtc);
+    if(t!=null && (newest==null || t>newest)) newest=t;
+  }
+  return count ? { count, newestUtc:new Date(newest).toISOString() } : null;
+}
 
 async function initMsal(){
   if(typeof msal==='undefined') throw new Error('Microsoft sign-in library failed to load (blocked by network). Reload, and if it persists ask IT to allow alcdn.msauth.net.');
@@ -506,19 +545,26 @@ function freshnessState(newestUtc, readUtc){
   }
   return { cls, text, ageMs:age };
 }
+function futureIgnoredText(info){
+  const count = info && info.count ? info.count : 0;
+  if(!count) return '';
+  return count===1 ? 'future-dated record ignored' : count+' future-dated records ignored';
+}
 function setStampClass(el, cls){
   if(!el) return;
   el.className = 'pill fresh-pill' + (cls === 'bad' ? ' bad' : (cls === 'warn' ? ' warn' : ''));
 }
-function updateFreshnessStamps(newestUtc, readUtc){
+function updateFreshnessStamps(newestUtc, readUtc, futureIgnored){
   DATA_NEWEST_UTC = newestUtc || DATA_NEWEST_UTC;
   DATA_READ_UTC = readUtc || DATA_READ_UTC || new Date().toISOString();
+  DATA_FUTURE_IGNORED = futureIgnored || DATA_FUTURE_IGNORED || null;
   const newestEl=document.getElementById('newestStamp'), readEl=document.getElementById('readStamp');
   const state=freshnessState(DATA_NEWEST_UTC, DATA_READ_UTC);
   const warnText = sourceWarningText(SOURCE_ISSUES);
-  if(newestEl) newestEl.textContent = 'newest record '+fmtDubai(DATA_NEWEST_UTC)+(state.text ? ' · '+state.text : '');
+  const futureText = futureIgnoredText(DATA_FUTURE_IGNORED);
+  if(newestEl) newestEl.textContent = 'newest record '+fmtDubai(DATA_NEWEST_UTC)+(state.text ? ' · '+state.text : '')+(futureText ? ' · '+futureText : '');
   if(readEl) readEl.textContent = 'read '+fmtDubai(DATA_READ_UTC)+(warnText ? ' · '+warnText : '');
-  setStampClass(newestEl, state.cls);
+  setStampClass(newestEl, futureText && state.cls === 'live' ? 'warn' : state.cls);
   setStampClass(readEl, warnText ? 'warn' : 'live');
   return state;
 }
@@ -640,6 +686,24 @@ function latestDate(values){
   let newest=null;
   (values||[]).forEach(v=>{ const t=ms(v); if(t!=null && (newest==null || t>newest)) newest=t; });
   return newest==null ? null : new Date(newest).toISOString();
+}
+function recordFreshness(values, readUtc){
+  const readMs = ms(readUtc) || Date.now();
+  let newest=null, futureNewest=null, futureCount=0;
+  (values||[]).forEach(v=>{
+    const t=ms(v);
+    if(t==null) return;
+    if(t>readMs){
+      futureCount++;
+      if(futureNewest==null || t>futureNewest) futureNewest=t;
+      return;
+    }
+    if(newest==null || t>newest) newest=t;
+  });
+  return {
+    newestUtc: newest==null ? null : new Date(newest).toISOString(),
+    futureIgnored: futureCount ? { count:futureCount, newestUtc:new Date(futureNewest).toISOString() } : null
+  };
 }
 
 function fmt(v){ if(!v) return ''; const d=new Date(v); if(isNaN(d)) return '';
@@ -793,18 +857,17 @@ async function fetchAndJoin(fromISO, toISO, force){
       _endJob: endJob, _finalDone: finalDone
     };
   });
-  const newestDataUtc = latestDate([].concat(
+  const freshness = recordFreshness([].concat(
     quotes.map(q=>q.createdon).concat(quotes.map(q=>q.opportunityid && q.opportunityid.createdon)),
     emails.map(e=>e.createdon),
-    approvals.map(a=>a.modifiedon || a.ssg_approvedrejectedon || a.createdon),
+    approvals.map(a=>a.createdon),
     wos.map(w=>w.createdon),
-    bookings.map(b=>b.endtime || b.starttime || b.ssg_plannedstartdate || b.createdon),
-    prRows.map(p=>p.stepDate || p.createdDate),
-    [prpoDataset && prpoDataset.freshness && prpoDataset.freshness.effectiveDataTimeUtc, prpoDataset && prpoDataset.generatedAt]
-  ));
+    bookings.map(b=>b.createdon),
+    prRows.map(p=>p.createdDate)
+  ), readUtc);
   return { rows, prRows, emailByQ,
     prpoMeta: prpoDataset ? { revision: prpoDataset.revision, generatedAt: prpoDataset.generatedAt, sourceState: prpoDataset.sourceState, freshness: prpoDataset.freshness || null, exportAuthority: prpoDataset.exportAuthority || null } : (prpoRes.issue ? { sourceState:'unavailable', error:prpoRes.issue } : null),
-    newestDataUtc, readUtc,
+    newestDataUtc: freshness.newestUtc, readUtc, futureIgnored: freshness.futureIgnored,
     sourceIssues,
     counts: { quotes: quotes.length, wo: Object.keys(woByQ).length, rfqGate: rfqSourceRows(prRows).length, appr: approvals.length, pr: prRows.length } };
 }
@@ -814,17 +877,35 @@ const RANGE_CACHE = (typeof window!=='undefined' ? (window.__QP_RANGE = window._
 const CACHE_TTL_MS = 5*60*1000;
 // ── Loading indicator + last-data cache (show previous data instantly, refresh in background) ──
 function qpSetLoading(on){ var el=document.getElementById('qpLoad'); if(el) el.style.display = on ? 'inline-flex' : 'none'; }
+function loadingBucketCard(label, desc, icon, color){
+  const row = '<div class="brow"><span class="blbl"><span class="load-skel loading-line wide">loading</span></span><span class="bcol"><b><span class="load-skel loading-line">...</span></b></span><span class="bdivider"></span><span class="bcol avg"><b><span class="load-skel loading-line">...</span></b></span></div>';
+  return '<div class="bcard loading-card" style="--c:'+color+'">'
+    + '<div class="bcard-head"><span class="bicon">'+icon+'</span><div><div class="btitle">'+label+'</div><div class="bdesc">'+desc+'</div></div></div>'
+    + '<div class="baccent"></div>'+row+row+row+'</div>';
+}
+function renderLoadingState(msg){
+  const trend=document.getElementById('trendKpis'), proc=document.getElementById('procKpis'), empty=document.getElementById('emptyMsg');
+  const cards = TREND_METRICS.map(m=>loadingBucketCard(m.label,m.desc,m.icon,m.c)).join('');
+  if(trend) trend.innerHTML = '<h3>Week-to-date trend · loading live records</h3><div class="cardrow">'+cards+'</div>';
+  if(proc) proc.innerHTML = '<div class="procHead">Procurement · RFQ Performance<small>· reading PR/PO gate 0.05</small></div><div class="cardrow">'
+    + loadingBucketCard('Total RFQ','CPR PRs at gate 0.05','📄','#145A95')
+    + loadingBucketCard('Median elapsed','PR created → inquiry sent','🕐','#145A95')
+    + loadingBucketCard('6h target','target under review','🎯','#C0392B')
+    + loadingBucketCard('Over 6h','avg elapsed','⏱️','#E8A33D')
+    + '</div>';
+  if(empty){ empty.style.display=''; empty.innerHTML='<div class="loading-note"><span class="qp-spin"></span> '+escapeHtml(msg || 'Loading live quote records…')+'</div>'; }
+}
 function qpCacheSave(){
-  try{ window.__QP_DATA = { DATA:DATA, TREND_DATA:TREND_DATA, PR_ROWS:PR_ROWS, EMAIL_BY_Q:EMAIL_BY_Q, PRPO_META:PRPO_META, SOURCE_ISSUES:SOURCE_ISSUES, DATA_NEWEST_UTC:DATA_NEWEST_UTC, DATA_READ_UTC:DATA_READ_UTC, QT:QUOTE_TYPE_FIELD, at:Date.now() }; }catch(e){}
+  try{ window.__QP_DATA = { DATA:DATA, TREND_DATA:TREND_DATA, PR_ROWS:PR_ROWS, EMAIL_BY_Q:EMAIL_BY_Q, PRPO_META:PRPO_META, SOURCE_ISSUES:SOURCE_ISSUES, DATA_NEWEST_UTC:DATA_NEWEST_UTC, DATA_READ_UTC:DATA_READ_UTC, DATA_FUTURE_IGNORED:DATA_FUTURE_IGNORED, QT:QUOTE_TYPE_FIELD, at:Date.now() }; }catch(e){}
   try{ var s = JSON.stringify(window.__QP_DATA); if(s.length < 4200000) localStorage.setItem('vqp_cache', s); }catch(e){} // persist across page reloads; skip if over quota
 }
 function qpCacheLoad(){
   var c = (typeof window!=='undefined') ? window.__QP_DATA : null;
   if(!c || !c.DATA){ try{ c = JSON.parse(localStorage.getItem('vqp_cache')||'null'); }catch(e){ c=null; } } // fall back to the last saved copy
   if(!c || !c.DATA) return false;
-  DATA=c.DATA; TREND_DATA=c.TREND_DATA; PR_ROWS=c.PR_ROWS; EMAIL_BY_Q=c.EMAIL_BY_Q; PRPO_META=c.PRPO_META||null; SOURCE_ISSUES=c.SOURCE_ISSUES||[];
+  DATA=c.DATA; TREND_DATA=c.TREND_DATA; PR_ROWS=c.PR_ROWS; EMAIL_BY_Q=c.EMAIL_BY_Q; PRPO_META=c.PRPO_META||null; SOURCE_ISSUES=c.SOURCE_ISSUES||[]; DATA_FUTURE_IGNORED=c.DATA_FUTURE_IGNORED||null;
   DATA_NEWEST_UTC=c.DATA_NEWEST_UTC||null; DATA_READ_UTC=c.DATA_READ_UTC||null;
-  if(DATA_NEWEST_UTC || DATA_READ_UTC) updateFreshnessStamps(DATA_NEWEST_UTC, DATA_READ_UTC);
+  if(DATA_NEWEST_UTC || DATA_READ_UTC) updateFreshnessStamps(DATA_NEWEST_UTC, DATA_READ_UTC, DATA_FUTURE_IGNORED);
   if(c.QT){ QUOTE_TYPE_FIELD=c.QT; QT_DETECTED=true; }
   return true;
 }
@@ -832,7 +913,9 @@ function qpCacheLoad(){
 function qpFirstRender(){
   try{ setDefaultDates(); }catch(e){}
   try{ WEEK_BOUNDS = weekBoundaries(); }catch(e){} // recompute (cache doesn't carry Date objects)
-  if(qpCacheLoad()){ try{ populateDepts(); populateProjects(); render(); renderKpis(); }catch(e){} } // instant from cache
+  const hadCache = qpCacheLoad();
+  if(hadCache){ try{ populateDepts(); populateProjects(); render(); renderKpis(); }catch(e){} } // instant from cache
+  else { try{ renderLoadingState('Loading live quote records…'); }catch(e){} }
   refreshAll(false); // background refresh (reuses cache if <5min, else refetch); spinner shows during network
 }
 async function cachedFetch(fromISO, toISO, force){
@@ -860,10 +943,10 @@ async function refreshAll(force){
     WEEK_BOUNDS = weekBoundaries();
     const trendFromISO = new Date(Math.min(...WEEK_BOUNDS.map(b=>b.start.getTime()))).toISOString();
     const trendToISO   = new Date(Math.max(...WEEK_BOUNDS.map(b=>b.end.getTime()))).toISOString();
-    const [tableRes, trendRes] = await Promise.all([
-      cachedFetch(fromISO, toISO, force),
-      cachedFetch(trendFromISO, trendToISO, force)
-    ]);
+    const tablePromise = cachedFetch(fromISO, toISO, force);
+    const tableCoversTrend = ms(fromISO) <= ms(trendFromISO) && ms(toISO) >= ms(trendToISO);
+    const trendPromise = tableCoversTrend ? tablePromise : cachedFetch(trendFromISO, trendToISO, force);
+    const [tableRes, trendRes] = await Promise.all([tablePromise, trendPromise]);
     DATA = tableRes.rows.sort((a,b)=> new Date(b.createdDateTime||b._quoteCreated) - new Date(a.createdDateTime||a._quoteCreated));
     TREND_DATA = trendRes.rows;
     PR_ROWS = tableRes.prRows || [];
@@ -872,7 +955,8 @@ async function refreshAll(force){
     SOURCE_ISSUES = mergeSourceIssues(tableRes.sourceIssues, trendRes.sourceIssues);
     DATA_NEWEST_UTC = latestDate([tableRes.newestDataUtc, trendRes.newestDataUtc]);
     DATA_READ_UTC = latestDate([tableRes.readUtc, trendRes.readUtc]) || new Date().toISOString();
-    updateFreshnessStamps(DATA_NEWEST_UTC, DATA_READ_UTC);
+    DATA_FUTURE_IGNORED = tableCoversTrend ? (tableRes.futureIgnored || null) : mergeFutureIgnored(tableRes.futureIgnored, trendRes.futureIgnored);
+    updateFreshnessStamps(DATA_NEWEST_UTC, DATA_READ_UTC, DATA_FUTURE_IGNORED);
     populateDepts();
     populateProjects();
     render(); renderKpis();
@@ -1011,7 +1095,9 @@ function render(){
   Object.keys(COL_FILTERS).forEach(k=>{ const p=COL_FILTER_DEFS[k]; if(p) rows = rows.filter(p); });
   if(STATUS_FILTER) rows = rows.filter(r=> (r.status||'')===STATUS_FILTER);
   const tb = document.getElementById('tbody');
-  document.getElementById('emptyMsg').style.display = rows.length ? 'none' : '';
+  const emptyEl = document.getElementById('emptyMsg');
+  emptyEl.style.display = rows.length ? 'none' : '';
+  if(!rows.length) emptyEl.textContent = 'No quotes found for the selected range.';
   function rowHtml(r){
     const sk = stageFlags(r);
     const stuck = r._finalDone ? null : stuckStageIdx(r, sk);
@@ -1382,6 +1468,7 @@ function renderProc(){
   const total   = recs.length;
   const pct     = n => total ? Math.round(n/total*100) : 0;
   const medMs = median(measured.map(r=>r.rfqMs));
+  const denominatorLabel = 'Percent denominator: total CPR PRs at gate 0.05 ('+total+').';
 
   // donut ring: r=15.915 makes the circumference exactly 100, so dasharray = percentage
   const donut=(p)=>{ p=Math.max(0,Math.min(100,p));
@@ -1393,7 +1480,7 @@ function renderProc(){
     + '<div class="tcard-top"><span class="tcard-ic">'+ic+'</span><span class="lbl">'+lbl+'</span></div>'+inner+'</div>';
   const statCard=(color,ic,lbl,cat,count,avgMs)=> shell(color,ic,lbl,cat,
       '<div class="tcard-body2"><span class="tbig2">'+count+'</span>'
-    + '<span class="tavg">🕐 '+(avgMs!=null?fmtDurMs(avgMs):'—')+' <span class="tsub2">avg elapsed</span></span>'
+    + '<span class="tavg">🕐 '+(avgMs!=null?fmtDurMs(avgMs):'—')+' <span class="tsub2">avg elapsed · of total gate rows</span></span>'
     + donut(pct(count)) + '</div>');
   const noSource = total === 0;
   const noSourceCard = bucketCardNoSource({c:'#C0392B', icon:'✉️', label:'RFQ source', desc:'authorised gate 0.05'}, sourceEmptyMessage('RFQ gate 0.05'));
@@ -1412,17 +1499,17 @@ function renderProc(){
     + '</div></div></div>');
   const medianCard = shell('#145A95','🕐','Median elapsed','median',
       '<div class="tcard-body2"><span class="tbig2">'+(medMs!=null?fmtDurMs(medMs):'—')+'</span>'
-    + '<span class="tavg"><span class="tsub2">PR created → inquiry sent</span></span>'
-    + donut(total ? 100 : 0) + '</div>');
+    + '<span class="tavg"><span class="tsub2">'+measured.length+' of '+total+' rows measured</span></span>'
+    + donut(pct(measured.length)) + '</div>');
   const targetCard = shell('#C0392B','🎯','6h target','under6',
-      '<div class="tcard-body2"><span class="tbig2">'+under6.length+'</span>'
-    + '<span class="pendchip" title="Benchmark is being re-agreed with Procurement">target under review</span>'
-    + donut(pct(under6.length)) + '</div>');
+      '<div class="tcard-body2"><span class="pendchip" title="Benchmark is being re-agreed with Procurement">target under review</span>'
+    + '<span class="tavg"><span class="tsub2">percentage suppressed until the target is agreed</span></span></div>');
 
   document.getElementById('procKpis').innerHTML =
       '<div class="procHead">Procurement · RFQ Performance'
     + '<small>· PR created → inquiry sent to suppliers · 6h target under review</small></div>'
     + '<div class="source-note"><strong>Counting limitation:</strong> requisitions currently waiting at “inquiry sent to suppliers” are counted; items that have already moved past this step are not counted. Source: PR/PO authorised gate 0.05.</div>'
+    + '<div class="source-note"><strong>RFQ percentages:</strong> '+escapeHtml(denominatorLabel)+' The 6h target percentage is hidden while the benchmark is under review.</div>'
     + '<div class="cardrow">'
     + (noSource ? noSourceCard : totalCard + medianCard + targetCard + statCard('#E8A33D','⏱️','Over 6h','over6',over6.length,avg(over6.map(r=>r.rfqMs))))
     + '</div>';
@@ -1519,7 +1606,7 @@ function dismissSplash(){
 }
 
 /* ============================ BOOT ============================ */
-window.__QP_TEST__ = { weekBoundaries, dubaiWeekStartUtc, freshnessState, sourceEmptyMessage, rfqSourceRows, rfqElapsedMs, median, applyTheme, toggleTheme, sourceFailure, mergeSourceIssues, sourceIssueMessage, fetchAndJoin };
+window.__QP_TEST__ = { weekBoundaries, dubaiWeekStartUtc, freshnessState, sourceEmptyMessage, rfqSourceRows, rfqElapsedMs, median, recordFreshness, mergeFutureIgnored, futureIgnoredText, applyTheme, toggleTheme, sourceFailure, mergeSourceIssues, sourceIssueMessage, fetchAndJoin };
 initTheme();
 initSplash();
 (async function(){

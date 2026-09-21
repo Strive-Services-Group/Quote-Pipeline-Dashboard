@@ -70,6 +70,17 @@ assert.equal(sunday[2].end.getTime() - sunday[2].start.getTime(), sunday[1].end.
 assert.equal(qp.freshnessState('2026-09-20T07:00:00Z', '2026-09-21T06:00:00Z').cls, 'live');
 assert.equal(qp.freshnessState('2026-09-19T05:00:00Z', '2026-09-21T06:00:00Z').cls, 'warn');
 assert.equal(qp.freshnessState('2026-09-17T04:59:00Z', '2026-09-21T06:00:00Z').cls, 'bad');
+assert.match(html, /v58/);
+
+const guardedFreshness = qp.recordFreshness([
+  '2026-09-20T08:00:00Z',
+  '2026-12-26T08:00:00Z',
+  '2026-09-21T05:59:00Z'
+], '2026-09-21T06:00:00Z');
+assert.equal(guardedFreshness.newestUtc, '2026-09-21T05:59:00.000Z');
+assert.equal(guardedFreshness.futureIgnored.count, 1);
+assert.match(qp.futureIgnoredText(guardedFreshness.futureIgnored), /future-dated record ignored/);
+assert.equal(qp.mergeFutureIgnored(guardedFreshness.futureIgnored, null).count, 1);
 
 const emptyMessage = qp.sourceEmptyMessage('legacy RFQ field', '2025-07-19T00:00:00Z');
 assert.match(emptyMessage, /^No source data/);
@@ -134,16 +145,17 @@ async function runAsyncProof() {
   assert(joined.sourceIssues.some(issue => issue.key === 'prpo'), 'PR/PO failure should be reported as a contained source issue');
 
   console.log(JSON.stringify({
-  monday: { currentStartUtc: iso(monday[2].start), samePointLastWeekEndUtc: iso(monday[1].end), currentLabel: monday[2].label },
-  midweek: { currentElapsedMs: midweek[2].end.getTime() - midweek[2].start.getTime(), priorElapsedMs: midweek[1].end.getTime() - midweek[1].start.getTime() },
-  sunday: { currentStartUtc: iso(sunday[2].start), currentElapsedMs: sunday[2].end.getTime() - sunday[2].start.getTime() },
-  staleStates: {
-    fresh: qp.freshnessState('2026-09-20T07:00:00Z', '2026-09-21T06:00:00Z').cls,
-    amber: qp.freshnessState('2026-09-19T05:00:00Z', '2026-09-21T06:00:00Z').cls,
-    red: qp.freshnessState('2026-09-17T04:59:00Z', '2026-09-21T06:00:00Z').cls
-  },
-  noSourceMessage: emptyMessage,
-  realZero: { sourceRows: sourceRows.length, underSixHours: elapsed.filter(ms => ms <= 6 * 3600000).length, medianHours: qp.median(elapsed) / 3600000 },
+    monday: { currentStartUtc: iso(monday[2].start), samePointLastWeekEndUtc: iso(monday[1].end), currentLabel: monday[2].label },
+    midweek: { currentElapsedMs: midweek[2].end.getTime() - midweek[2].start.getTime(), priorElapsedMs: midweek[1].end.getTime() - midweek[1].start.getTime() },
+    sunday: { currentStartUtc: iso(sunday[2].start), currentElapsedMs: sunday[2].end.getTime() - sunday[2].start.getTime() },
+    staleStates: {
+      fresh: qp.freshnessState('2026-09-20T07:00:00Z', '2026-09-21T06:00:00Z').cls,
+      amber: qp.freshnessState('2026-09-19T05:00:00Z', '2026-09-21T06:00:00Z').cls,
+      red: qp.freshnessState('2026-09-17T04:59:00Z', '2026-09-21T06:00:00Z').cls
+    },
+    guardedFreshness,
+    noSourceMessage: emptyMessage,
+    realZero: { sourceRows: sourceRows.length, underSixHours: elapsed.filter(ms => ms <= 6 * 3600000).length, medianHours: qp.median(elapsed) / 3600000 },
     prpoFailure: { rowsReturned: joined.rows.length, issueKeys: joined.sourceIssues.map(issue => issue.key), rfqValue: joined.rows[0].rfq.val },
     theme: { persistedAfterToggle: storage.qp_theme, documentTheme: documentElement.attrs['data-theme'] }
   }, null, 2));
