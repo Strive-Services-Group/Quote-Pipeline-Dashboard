@@ -333,7 +333,7 @@
   <button class="hbtn theme-toggle" onclick="toggleTheme()" id="themeBtn" type="button" aria-label="Switch colour theme">Dark</button>
   <button class="hbtn" onclick="refreshAll(true)" id="refreshBtn" style="display:none">↻ Refresh</button>
   <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
-  <span class="ver">v58</span>
+  <span class="ver">v59</span>
 </header>
 <div class="controls" id="controls" style="display:none">
   <div class="ctrl"><label>From</label><input type="date" id="fromDate" onchange="refreshAll()"></div>
@@ -414,6 +414,9 @@ let DATA_FUTURE_IGNORED = null;
 let prpoDatasetCache = null;
 let prpoDatasetPromise = null;
 let SOURCE_ISSUES = [];
+let PRPO_LOADING = false;
+let TREND_SAME_AS_DATA = false;
+let REFRESH_SEQUENCE = 0;
 
 let QUOTE_TYPE_FIELD = '';
 let QT_DETECTED = false;
@@ -610,7 +613,8 @@ async function fetchPrpoDataset(force){
   prpoDatasetPromise = (async function(){
     const token = await getPrpoToken();
     if(!token) throw new Error('Microsoft session did not return a PR/PO data token.');
-    const url = PRPO_DATASET_URL + (force ? '?refresh=1' : '?refresh=0');
+    // Browser refreshes always read the durable published revision. Scheduled proxy jobs own rebuilds.
+    const url = PRPO_DATASET_URL + '?refresh=0';
     const r = await fetch(url, { cache:'no-store', headers:{ Accept:'application/json', Authorization:'Bearer '+token } });
     if(!r.ok){
       let detail = '';
@@ -646,8 +650,7 @@ function normalizePrRow(row){
     stepDate: pickField(row, ['Step date and time','Stage event date and time']),
     authorisedGateNumber: pickField(row, ['Authorised gate number','Capture gate number']),
     authorisedGateName: pickField(row, ['Authorised gate name','Capture gate name']),
-    authorisedSource: pickField(row, ['Authority source']),
-    raw: row
+    authorisedSource: pickField(row, ['Authority source'])
   };
 }
 
@@ -736,10 +739,10 @@ function apprSpan(recs, typeVals){
   return {val: m2==null?null:fmtDurMs(m2), ms:m2, status, start, end};
 }
 
-async function fetchAndJoin(fromISO, toISO, force){
+async function fetchDataverseSources(fromISO, toISO){
   const rng = "createdon ge "+fromISO+" and createdon le "+toISO;
   const qtSel = QUOTE_TYPE_FIELD ? (','+QUOTE_TYPE_FIELD) : '';
-  const [quotesRes, emailsRes, approvalsRes, wosRes, bookingsRes, prpoRes] = await Promise.all([
+  const [quotesRes, emailsRes, approvalsRes, wosRes, bookingsRes] = await Promise.all([
     readSource('quotes', 'Quotes', 'table', () => dvGet("quotes?$select=quoteid,quotenumber,createdon,statuscode,name,_opportunityid_value,_ssg_communityproject_value"+qtSel
       + "&$expand=opportunityid($select=createdon,name,ssg_textdepartment)"
       + "&$filter="+encodeURIComponent(rng)), []),
@@ -752,16 +755,24 @@ async function fetchAndJoin(fromISO, toISO, force){
       + "&$filter="+encodeURIComponent("_ssg_division_value eq "+CANDOO_DIVISION+" and "+rng)), []),
     readSource('bookings', 'Bookings', 'work', () => dvGet("bookableresourcebookings?$select=ssg_bookingnumber,ssg_plannedstartdate,starttime,endtime,createdon,_msdyn_workorder_value"
       + "&$expand=msdyn_workorder($select=ssg_quotenumber,_ssg_division_value)"
-      + "&$filter="+encodeURIComponent("msdyn_workorder/_ssg_division_value eq "+CANDOO_DIVISION+" and "+rng)), []),
-    readSource('prpo', 'PR/PO RFQ source', 'rfq', () => fetchPrpoDataset(force), null)
+      + "&$filter="+encodeURIComponent("msdyn_workorder/_ssg_division_value eq "+CANDOO_DIVISION+" and "+rng)), [])
   ]);
+  return { quotesRes, emailsRes, approvalsRes, wosRes, bookingsRes };
+}
+
+async function fetchPrpoSource(force){
+  return readSource('prpo', 'PR/PO RFQ source', 'rfq', () => fetchPrpoDataset(force), null);
+}
+
+function joinSources(sourceSet, prpoRes, prpoPending){
+  const { quotesRes, emailsRes, approvalsRes, wosRes, bookingsRes } = sourceSet;
   const quotes = quotesRes.value || [];
   const emails = emailsRes.value || [];
   const approvals = approvalsRes.value || [];
   const wos = wosRes.value || [];
   const bookings = bookingsRes.value || [];
-  const prpoDataset = prpoRes.value;
-  const sourceIssues = mergeSourceIssues([quotesRes.issue, emailsRes.issue, approvalsRes.issue, wosRes.issue, bookingsRes.issue, prpoRes.issue].filter(Boolean));
+  const prpoDataset = prpoRes && prpoRes.value;
+  const sourceIssues = mergeSourceIssues([quotesRes.issue, emailsRes.issue, approvalsRes.issue, wosRes.issue, bookingsRes.issue, prpoRes && prpoRes.issue].filter(Boolean));
   const prRows = normalizePrRows(prpoDataset && prpoDataset.pr ? prpoDataset.pr.rows : []).filter(isCpr);
   const readUtc = new Date().toISOString();
 
@@ -854,7 +865,7 @@ async function fetchAndJoin(fromISO, toISO, force){
       _name: q.name||'', _prNo: pr?pr.purchaseRequisition:'', _prLoc: pr?(prProject(pr)||pr.location||''):'',
       project: (q['_ssg_communityproject_value'+F]||'').trim(), /* project = quote's own Community Project column (NOT PR-derived) */
       _woName: wo?wo.msdyn_name:'', _quoteCreated:q.createdon,
-      _endJob: endJob, _finalDone: finalDone
+      _endJob: endJob, _finalDone: finalDone, _prpoPending:!!prpoPending
     };
   });
   const freshness = recordFreshness([].concat(
@@ -866,10 +877,18 @@ async function fetchAndJoin(fromISO, toISO, force){
     prRows.map(p=>p.createdDate)
   ), readUtc);
   return { rows, prRows, emailByQ,
-    prpoMeta: prpoDataset ? { revision: prpoDataset.revision, generatedAt: prpoDataset.generatedAt, sourceState: prpoDataset.sourceState, freshness: prpoDataset.freshness || null, exportAuthority: prpoDataset.exportAuthority || null } : (prpoRes.issue ? { sourceState:'unavailable', error:prpoRes.issue } : null),
+    prpoMeta: prpoDataset ? { revision: prpoDataset.revision, generatedAt: prpoDataset.generatedAt, sourceState: prpoDataset.sourceState, freshness: prpoDataset.freshness || null, exportAuthority: prpoDataset.exportAuthority || null } : (prpoRes && prpoRes.issue ? { sourceState:'unavailable', error:prpoRes.issue } : null),
     newestDataUtc: freshness.newestUtc, readUtc, futureIgnored: freshness.futureIgnored,
-    sourceIssues,
+    sourceIssues, prpoPending:!!prpoPending,
     counts: { quotes: quotes.length, wo: Object.keys(woByQ).length, rfqGate: rfqSourceRows(prRows).length, appr: approvals.length, pr: prRows.length } };
+}
+
+async function fetchAndJoin(fromISO, toISO, force){
+  const [sourceSet, prpoRes] = await Promise.all([
+    fetchDataverseSources(fromISO, toISO),
+    fetchPrpoSource(force)
+  ]);
+  return joinSources(sourceSet, prpoRes, false);
 }
 
 // Keep the fetch cache on window so re-opening the tab (embedded SPA re-mounts the view) reuses it instead of refetching.
@@ -896,14 +915,25 @@ function renderLoadingState(msg){
   if(empty){ empty.style.display=''; empty.innerHTML='<div class="loading-note"><span class="qp-spin"></span> '+escapeHtml(msg || 'Loading live quote records…')+'</div>'; }
 }
 function qpCacheSave(){
-  try{ window.__QP_DATA = { DATA:DATA, TREND_DATA:TREND_DATA, PR_ROWS:PR_ROWS, EMAIL_BY_Q:EMAIL_BY_Q, PRPO_META:PRPO_META, SOURCE_ISSUES:SOURCE_ISSUES, DATA_NEWEST_UTC:DATA_NEWEST_UTC, DATA_READ_UTC:DATA_READ_UTC, DATA_FUTURE_IGNORED:DATA_FUTURE_IGNORED, QT:QUOTE_TYPE_FIELD, at:Date.now() }; }catch(e){}
-  try{ var s = JSON.stringify(window.__QP_DATA); if(s.length < 4200000) localStorage.setItem('vqp_cache', s); }catch(e){} // persist across page reloads; skip if over quota
+  const trendSame = TREND_SAME_AS_DATA || TREND_DATA === DATA;
+  const payload = { DATA:DATA, TREND_DATA:trendSame?null:TREND_DATA, TREND_SAME_AS_DATA:trendSame,
+    PR_ROWS:PRPO_LOADING?[]:PR_ROWS, EMAIL_BY_Q:EMAIL_BY_Q, PRPO_META:PRPO_LOADING?null:PRPO_META, PRPO_READY:!PRPO_LOADING,
+    SOURCE_ISSUES:SOURCE_ISSUES, DATA_NEWEST_UTC:DATA_NEWEST_UTC, DATA_READ_UTC:DATA_READ_UTC,
+    DATA_FUTURE_IGNORED:DATA_FUTURE_IGNORED, QT:QUOTE_TYPE_FIELD, at:Date.now() };
+  try{ window.__QP_DATA = payload; }catch(e){}
+  try{ localStorage.setItem('vqp_cache', JSON.stringify(payload)); }
+  catch(e){
+    // A usable quote cache is more important than retaining the PR/PO enrichment if browser quota is tight.
+    try{ const compact=Object.assign({},payload,{PR_ROWS:[],PRPO_META:null,PRPO_READY:false}); localStorage.setItem('vqp_cache',JSON.stringify(compact)); }catch(e2){}
+  }
 }
 function qpCacheLoad(){
   var c = (typeof window!=='undefined') ? window.__QP_DATA : null;
   if(!c || !c.DATA){ try{ c = JSON.parse(localStorage.getItem('vqp_cache')||'null'); }catch(e){ c=null; } } // fall back to the last saved copy
   if(!c || !c.DATA) return false;
-  DATA=c.DATA; TREND_DATA=c.TREND_DATA; PR_ROWS=c.PR_ROWS; EMAIL_BY_Q=c.EMAIL_BY_Q; PRPO_META=c.PRPO_META||null; SOURCE_ISSUES=c.SOURCE_ISSUES||[]; DATA_FUTURE_IGNORED=c.DATA_FUTURE_IGNORED||null;
+  DATA=c.DATA; TREND_SAME_AS_DATA=!!c.TREND_SAME_AS_DATA; TREND_DATA=TREND_SAME_AS_DATA?DATA:(c.TREND_DATA||[]);
+  PR_ROWS=c.PR_ROWS||[]; EMAIL_BY_Q=c.EMAIL_BY_Q||{}; PRPO_META=c.PRPO_META||null; PRPO_LOADING=c.PRPO_READY===false;
+  SOURCE_ISSUES=c.SOURCE_ISSUES||[]; DATA_FUTURE_IGNORED=c.DATA_FUTURE_IGNORED||null;
   DATA_NEWEST_UTC=c.DATA_NEWEST_UTC||null; DATA_READ_UTC=c.DATA_READ_UTC||null;
   if(DATA_NEWEST_UTC || DATA_READ_UTC) updateFreshnessStamps(DATA_NEWEST_UTC, DATA_READ_UTC, DATA_FUTURE_IGNORED);
   if(c.QT){ QUOTE_TYPE_FIELD=c.QT; QT_DETECTED=true; }
@@ -918,21 +948,41 @@ function qpFirstRender(){
   else { try{ renderLoadingState('Loading live quote records…'); }catch(e){} }
   refreshAll(false); // background refresh (reuses cache if <5min, else refetch); spinner shows during network
 }
-async function cachedFetch(fromISO, toISO, force){
+async function cachedDataverseFetch(fromISO, toISO, force){
   const key = fromISO+'|'+toISO;
   if(!force){
     const hit = RANGE_CACHE.get(key);
     if(hit && (Date.now()-hit.at) < CACHE_TTL_MS) return hit.data;
   }
-  const data = await fetchAndJoin(fromISO, toISO, force);
+  const data = await fetchDataverseSources(fromISO, toISO);
   RANGE_CACHE.set(key, { data, at: Date.now() });
   return data;
+}
+
+function applyRefreshResults(tableRes, trendRes, tableCoversTrend, prpoLoading){
+  DATA = tableRes.rows.sort((a,b)=> new Date(b.createdDateTime||b._quoteCreated) - new Date(a.createdDateTime||a._quoteCreated));
+  TREND_SAME_AS_DATA = !!tableCoversTrend;
+  TREND_DATA = tableCoversTrend ? DATA : trendRes.rows;
+  PR_ROWS = tableRes.prRows || [];
+  EMAIL_BY_Q = tableRes.emailByQ || {};
+  PRPO_META = tableRes.prpoMeta || trendRes.prpoMeta || null;
+  PRPO_LOADING = !!prpoLoading;
+  SOURCE_ISSUES = mergeSourceIssues(tableRes.sourceIssues, trendRes.sourceIssues);
+  DATA_NEWEST_UTC = latestDate([tableRes.newestDataUtc, trendRes.newestDataUtc]);
+  DATA_READ_UTC = latestDate([tableRes.readUtc, trendRes.readUtc]) || new Date().toISOString();
+  DATA_FUTURE_IGNORED = tableCoversTrend ? (tableRes.futureIgnored || null) : mergeFutureIgnored(tableRes.futureIgnored, trendRes.futureIgnored);
+  updateFreshnessStamps(DATA_NEWEST_UTC, DATA_READ_UTC, DATA_FUTURE_IGNORED);
+  populateDepts();
+  populateProjects();
+  render(); renderKpis();
+  qpCacheSave();
 }
 
 async function refreshAll(force){
   // Only run when THIS dashboard is on screen. When embedded as a tab, leaving it must not let the
   // background refresh touch other tabs — bail and cancel the auto-refresh timer if we're off-tab.
   if(!document.getElementById('qpLoad')){ if(window.__qpTimer){ clearInterval(window.__qpTimer); window.__qpTimer=null; } return; }
+  const refreshSequence = ++REFRESH_SEQUENCE;
   setStatus('syncing…','warn'); qpSetLoading(true);
   try{
     crmToken = await getToken();
@@ -943,26 +993,22 @@ async function refreshAll(force){
     WEEK_BOUNDS = weekBoundaries();
     const trendFromISO = new Date(Math.min(...WEEK_BOUNDS.map(b=>b.start.getTime()))).toISOString();
     const trendToISO   = new Date(Math.max(...WEEK_BOUNDS.map(b=>b.end.getTime()))).toISOString();
-    const tablePromise = cachedFetch(fromISO, toISO, force);
+    const prpoPromise = fetchPrpoSource(force);
+    const tablePromise = cachedDataverseFetch(fromISO, toISO, force);
     const tableCoversTrend = ms(fromISO) <= ms(trendFromISO) && ms(toISO) >= ms(trendToISO);
-    const trendPromise = tableCoversTrend ? tablePromise : cachedFetch(trendFromISO, trendToISO, force);
-    const [tableRes, trendRes] = await Promise.all([tablePromise, trendPromise]);
-    DATA = tableRes.rows.sort((a,b)=> new Date(b.createdDateTime||b._quoteCreated) - new Date(a.createdDateTime||a._quoteCreated));
-    TREND_DATA = trendRes.rows;
-    PR_ROWS = tableRes.prRows || [];
-    EMAIL_BY_Q = tableRes.emailByQ || {};
-    PRPO_META = tableRes.prpoMeta || trendRes.prpoMeta || null;
-    SOURCE_ISSUES = mergeSourceIssues(tableRes.sourceIssues, trendRes.sourceIssues);
-    DATA_NEWEST_UTC = latestDate([tableRes.newestDataUtc, trendRes.newestDataUtc]);
-    DATA_READ_UTC = latestDate([tableRes.readUtc, trendRes.readUtc]) || new Date().toISOString();
-    DATA_FUTURE_IGNORED = tableCoversTrend ? (tableRes.futureIgnored || null) : mergeFutureIgnored(tableRes.futureIgnored, trendRes.futureIgnored);
-    updateFreshnessStamps(DATA_NEWEST_UTC, DATA_READ_UTC, DATA_FUTURE_IGNORED);
-    populateDepts();
-    populateProjects();
-    render(); renderKpis();
+    const trendPromise = tableCoversTrend ? tablePromise : cachedDataverseFetch(trendFromISO, trendToISO, force);
+    const [tableSources, trendSources] = await Promise.all([tablePromise, trendPromise]);
+    if(refreshSequence !== REFRESH_SEQUENCE) return;
+    applyRefreshResults(joinSources(tableSources,null,true), joinSources(trendSources,null,true), tableCoversTrend, true);
+    setStatus('quotes live · PR/PO figures still loading','warn');
+
+    const prpoRes = await prpoPromise;
+    if(refreshSequence !== REFRESH_SEQUENCE) return;
+    const tableRes = joinSources(tableSources,prpoRes,false);
+    const trendRes = tableCoversTrend ? tableRes : joinSources(trendSources,prpoRes,false);
+    applyRefreshResults(tableRes, trendRes, tableCoversTrend, false);
     const warnText = sourceWarningText(SOURCE_ISSUES);
     setStatus((warnText ? 'live · '+warnText : 'live')+' · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), warnText ? 'warn' : 'live');
-    qpCacheSave();
   }catch(e){
     console.error(e); setStatus('page refresh failed', 'err'); // no alert — background refreshes must fail quietly, last data stays on screen
   }finally{ qpSetLoading(false); }
@@ -1006,6 +1052,7 @@ const SKIP='<span class="skip">Skipped</span>';
 function hotCls(ms,hotMs){ return (hotMs!=null && ms!=null && ms>hotMs) ? ' hot' : ''; }
 function durCell(o,skipped,hotMs){ if(o && o.val) return '<span class="dur'+hotCls(o.ms,hotMs)+'" title="'+escapeHtml(fmt(o.a)+'  →  '+fmt(o.b))+'">'+o.val+'</span>';
   return skipped ? SKIP : '<span class="none">—</span>'; }
+function prpoLoadingCell(){ return '<span class="load-skel loading-line" title="PR/PO figures still loading">loading</span>'; }
 function statusCls(s){ s=(s||'').toLowerCase(); if(s.indexOf('approv')>=0&&s.indexOf('reject')<0) return 'cust';
   if(s.indexOf('reject')>=0) return 'bad'; return 'markup'; }
 function apprCell(o,skipped,hideApproved,hotMs){ if(!o || !o.status) return skipped ? SKIP : '<span class="none">—</span>';
@@ -1092,7 +1139,7 @@ function render(){
   const q = (document.getElementById('search').value||'').toLowerCase().trim();
   let rows = activeRows();
   if(q){ rows = rows.filter(r => (r.quoteNo+' '+r._name+' '+r._prNo+' '+r._prLoc+' '+r.project+' '+r.dept+' '+r.status+' '+r._woName).toLowerCase().includes(q)); }
-  Object.keys(COL_FILTERS).forEach(k=>{ const p=COL_FILTER_DEFS[k]; if(p) rows = rows.filter(p); });
+  Object.keys(COL_FILTERS).forEach(k=>{ if(PRPO_LOADING && /^(dr|rfq|sla)$/.test(k)) return; const p=COL_FILTER_DEFS[k]; if(p) rows = rows.filter(p); });
   if(STATUS_FILTER) rows = rows.filter(r=> (r.status||'')===STATUS_FILTER);
   const tb = document.getElementById('tbody');
   const emptyEl = document.getElementById('emptyMsg');
@@ -1100,7 +1147,8 @@ function render(){
   if(!rows.length) emptyEl.textContent = 'No quotes found for the selected range.';
   function rowHtml(r){
     const sk = stageFlags(r);
-    const stuck = r._finalDone ? null : stuckStageIdx(r, sk);
+    const prpoPending = !!r._prpoPending;
+    const stuck = (r._finalDone || prpoPending) ? null : stuckStageIdx(r, sk);
     const pend = (html,i)=> (stuck===i && /class="none"/.test(html)) ? tintTag('Pending','#C0392B') : html;
     // Approval record never completed in CRM but the quote already moved on (WO exists) → implied approved:
     // show the elapsed time (sent → WO created) instead of the "Sent for approval" badge.
@@ -1112,9 +1160,9 @@ function render(){
       <td class="qno">${ r.quoteId ? '<a href="'+quoteUrl(r.quoteId)+'" target="_blank" rel="noopener">'+escapeHtml(r.quoteNo)+'</a>' : escapeHtml(r.quoteNo) }</td>
       <td>${dcell(r.createdDateTime)}</td>
       <td>${ r.quoteType ? tintTag(r.quoteType, quoteTypeColor(r.quoteType)) : '<span class="none">—</span>' }</td>
-      <td>${pend(durCell(r.drafting,sk[0],3*36e5),0)}</td>
+      <td>${prpoPending ? prpoLoadingCell() : pend(durCell(r.drafting,sk[0],3*36e5),0)}</td>
       <td>${pend(estCell(r.est, sk[1] || !!(r.rfq && r.rfq.a), 3*36e5),1)}</td>
-      <td>${pend(durCell(r.rfq,sk[2],3*36e5),2)}</td>
+      <td>${prpoPending ? prpoLoadingCell() : pend(durCell(r.rfq,sk[2],3*36e5),2)}</td>
       <td>${pend(apprCell(r.internal,sk[3],true,30*6e4),3)}</td>
       <td>${pend(apprCell(cust,sk[4],true),4)}</td>
       <td>${pend(durCell(r.scheduling,sk[5]),5)}</td>
@@ -1159,9 +1207,10 @@ function renderCountRow(rows){
     st:   rows.filter(r=>r.status).length,
     est:  rows.filter(r=>r.est && r.est.any).length
   };
-  const cell = (v,lbl,k)=>'<th>'
+  const loadingCount = '<span class="load-skel loading-line">...</span>';
+  const cell = (v,lbl,k,pending)=>'<th>'
     + (k ? '<label class="cfl" title="Tick to show only rows with a value in this column">'
-         + '<input type="checkbox" onchange="toggleColFilter(\''+k+'\',this.checked)"'+(COL_FILTERS[k]?' checked':'')+'>' : '')
+         + '<input type="checkbox" onchange="toggleColFilter(\''+k+'\',this.checked)"'+(COL_FILTERS[k]?' checked':'')+(pending?' disabled':'')+'>' : '')
     + '<span class="cnum">'+v+'</span> <span class="clbl">'+lbl+'</span>'
     + (k ? '</label>' : '') + '</th>';
   const blank = '<th></th>';
@@ -1173,15 +1222,15 @@ function renderCountRow(rows){
     + '<input type="checkbox" onchange="clearColFilters()"'+((Object.keys(COL_FILTERS).length||STATUS_FILTER)?'':' checked')+'>'
     + '<span class="cnum">'+n+'</span> <span class="clbl">quotes</span></label></th>';
   const slaCell = '<th><label class="cfl" title="Show only quotes that breached an SLA limit (red timings)">'
-    + '<input type="checkbox" onchange="toggleColFilter(\'sla\',this.checked)"'+(COL_FILTERS['sla']?' checked':'')+'>'
-    + '<span class="cnum">'+slaN+'</span> <span class="clbl">SLA failed</span></label></th>';
+    + '<input type="checkbox" onchange="toggleColFilter(\'sla\',this.checked)"'+(COL_FILTERS['sla']?' checked':'')+(PRPO_LOADING?' disabled':'')+'>'
+    + '<span class="cnum">'+(PRPO_LOADING?loadingCount:slaN)+'</span> <span class="clbl">SLA failed</span></label></th>';
   document.getElementById('countRow').innerHTML =
       totalCell             /* Quote No — Total */
     + slaCell               /* Created Date — SLA failed */
     + typeCell              /* Quote Type */
-    + cell(c.dr,'drafted','dr')   /* Drafting */
+    + cell(PRPO_LOADING?loadingCount:c.dr,'drafted','dr',PRPO_LOADING)   /* Drafting */
     + cell(c.est,'est appr','est')/* Estimation Without PR */
-    + cell(c.rfq,'rfq','rfq')     /* RFQ Process */
+    + cell(PRPO_LOADING?loadingCount:c.rfq,'rfq','rfq',PRPO_LOADING)     /* RFQ Process */
     + cell(c.ia,'internal','ia')  /* Internal Approval */
     + cell(c.ca,'customer','ca')  /* Customer Approval */
     + cell(c.sch,'scheduled','sch') /* Scheduling Time */
@@ -1313,6 +1362,12 @@ function renderKpis(){
   const trendRows = activeTrendRows();
   const wb = WEEK_BOUNDS.length ? WEEK_BOUNDS : weekBoundaries();
   const cards = TREND_METRICS.map(m=>{
+    if(PRPO_LOADING && m.k==='drafting') return loadingBucketCard(m.label,'PR/PO figures still loading',m.icon,m.c);
+    if(PRPO_LOADING && m.k==='rfq'){
+      const cnt2=[0,0,0], av2=[null,null,null];
+      for(let w=0;w<3;w++){ const rows2=quoteBucketRows(trendRows,wb[w]); const v2=rows2.map(r=>stageHitMs(r,m.split)).filter(x=>x!=null); cnt2[w]=v2.length; av2[w]=avg(v2); }
+      return bucketCardSplitPrpoLoading(m,cnt2,av2,wb);
+    }
     const issue = metricSourceIssue(m);
     if(m.k==='rfq' && issue && m.split){
       const cnt2=[0,0,0], av2=[null,null,null];
@@ -1414,6 +1469,28 @@ function bucketCardSplitSourceIssue(m,cnt2,av2,wb,msg){
     + '</div>';
 }
 
+function bucketCardSplitPrpoLoading(m,cnt2,av2,wb){
+  const grpEst=(i,c,a,cd,ad)=>'<span class="bgrp est2" title="click to drill through" onclick="event.stopPropagation();drillBucket(\'est\','+i+')">'
+    + '<b>'+c.toLocaleString()+'<span class="dotsep">·</span>'+(a!=null?fmtDurMs(a):'—')+'</b>'
+    + ((cd||ad)?'<span class="dline">'+cd+ad+'</span>':'')
+    + '</span>';
+  const loadingChip='<span class="bgrp pr2 source-issue-chip"><b><span class="load-skel loading-line">loading</span></b><span class="dline">PR/PO figures</span></span>';
+  const row=(meta)=>{
+    const i=meta.i, isCur=!!meta.cur;
+    const sym = isCur ? '▶' : (i===1 ? '◀' : '■');
+    const compare = isCur ? 1 : null;
+    const cd2=compare!=null?deltaCount(cnt2[i],cnt2[compare]):'', ad2=compare!=null?deltaDur(av2[i],av2[compare]):'';
+    return '<div class="brow'+(isCur?' cur':'')+'" title="'+escapeHtml(meta.lbl+' · '+fmtRange(wb[i]))+'">'
+      + '<span class="blbl bsym" title="'+escapeHtml(meta.lbl)+'">'+sym+'</span>'
+      + grpEst(i,cnt2[i],av2[i],cd2,ad2)
+      + '<span class="bdivider"></span>'+loadingChip+'</div>';
+  };
+  return '<div class="bcard" style="--c:'+m.c+'">'
+    + '<div class="bcard-head"><span class="bicon">'+m.icon+'</span><div><div class="btitle">'+m.label+'</div>'
+    + '<div class="bdesc"><span style="color:#534AB7;font-weight:700;">Estimation</span> live · PR/PO figures still loading</div></div></div>'
+    + '<div class="baccent"></div>'+rowMeta(wb).map(row).join('')+'</div>';
+}
+
 // Project location of a PR = segment 5 of the F&O ledger dimension
 // e.g. "-Variation-402400-Building Services--THE PRISM TOWER-Materials-Sub_Contracted-" → "THE PRISM TOWER"
 // (proxy's own `location` field holds the department for CPR rows, so don't use it here)
@@ -1448,6 +1525,18 @@ function rfqRecs(){
   });
 }
 function renderProc(){
+  if(PRPO_LOADING){
+    document.getElementById('procKpis').innerHTML =
+        '<div class="procHead">Procurement · RFQ Performance<small>· PR created → inquiry sent · 6h target under review</small></div>'
+      + '<div class="source-note"><strong>PR/PO figures still loading</strong></div>'
+      + '<div class="cardrow">'
+      + loadingBucketCard('Total RFQ','CPR PRs at gate 0.05','📄','#145A95')
+      + loadingBucketCard('Median elapsed','PR created → inquiry sent','🕐','#145A95')
+      + loadingBucketCard('6h target','target under review','🎯','#C0392B')
+      + loadingBucketCard('Over 6h','avg elapsed','⏱️','#E8A33D')
+      + '</div>';
+    return;
+  }
   const rfqIssue = sourceIssue('prpo');
   if(rfqIssue){
     const msg = sourceIssueMessage(rfqIssue);
@@ -1606,7 +1695,7 @@ function dismissSplash(){
 }
 
 /* ============================ BOOT ============================ */
-window.__QP_TEST__ = { weekBoundaries, dubaiWeekStartUtc, freshnessState, sourceEmptyMessage, rfqSourceRows, rfqElapsedMs, median, recordFreshness, mergeFutureIgnored, futureIgnoredText, applyTheme, toggleTheme, sourceFailure, mergeSourceIssues, sourceIssueMessage, fetchAndJoin };
+window.__QP_TEST__ = { weekBoundaries, dubaiWeekStartUtc, freshnessState, sourceEmptyMessage, rfqSourceRows, rfqElapsedMs, median, recordFreshness, mergeFutureIgnored, futureIgnoredText, applyTheme, toggleTheme, sourceFailure, mergeSourceIssues, sourceIssueMessage, fetchDataverseSources, fetchPrpoSource, joinSources, fetchAndJoin };
 initTheme();
 initSplash();
 (async function(){

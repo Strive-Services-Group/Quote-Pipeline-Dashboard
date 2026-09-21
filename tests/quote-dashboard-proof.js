@@ -70,7 +70,12 @@ assert.equal(sunday[2].end.getTime() - sunday[2].start.getTime(), sunday[1].end.
 assert.equal(qp.freshnessState('2026-09-20T07:00:00Z', '2026-09-21T06:00:00Z').cls, 'live');
 assert.equal(qp.freshnessState('2026-09-19T05:00:00Z', '2026-09-21T06:00:00Z').cls, 'warn');
 assert.equal(qp.freshnessState('2026-09-17T04:59:00Z', '2026-09-21T06:00:00Z').cls, 'bad');
-assert.match(html, /v58/);
+assert.match(html, /v59/);
+assert.match(html, /PR\/PO figures still loading/);
+assert.match(html, /PRPO_DATASET_URL \+ '\?refresh=0'/);
+assert.doesNotMatch(html, /PRPO_DATASET_URL \+ \(force \? '\?refresh=1'/);
+assert.doesNotMatch(html, /4200000/);
+assert.doesNotMatch(html, /raw:\s*row/);
 
 const guardedFreshness = qp.recordFreshness([
   '2026-09-20T08:00:00Z',
@@ -136,6 +141,13 @@ async function runAsyncProof() {
     }
     return [];
   };
+  const fastSources = await qp.fetchDataverseSources('2026-09-20T20:00:00.000Z', '2026-09-21T19:59:59.000Z');
+  const progressive = qp.joinSources(fastSources, null, true);
+  assert.equal(progressive.rows.length, 1);
+  assert.equal(progressive.rows[0]._prpoPending, true);
+  assert.equal(progressive.sourceIssues.some(issue => issue.key === 'prpo'), false);
+  assert.equal(progressive.prRows.length, 0);
+
   const joined = await qp.fetchAndJoin('2026-09-20T20:00:00.000Z', '2026-09-21T19:59:59.000Z', true);
   assert.equal(joined.rows.length, 1);
   assert.equal(joined.prRows.length, 0);
@@ -156,6 +168,7 @@ async function runAsyncProof() {
     guardedFreshness,
     noSourceMessage: emptyMessage,
     realZero: { sourceRows: sourceRows.length, underSixHours: elapsed.filter(ms => ms <= 6 * 3600000).length, medianHours: qp.median(elapsed) / 3600000 },
+    progressive: { rowsReturned: progressive.rows.length, prpoPending: progressive.rows[0]._prpoPending },
     prpoFailure: { rowsReturned: joined.rows.length, issueKeys: joined.sourceIssues.map(issue => issue.key), rfqValue: joined.rows[0].rfq.val },
     theme: { persistedAfterToggle: storage.qp_theme, documentTheme: documentElement.attrs['data-theme'] }
   }, null, 2));
