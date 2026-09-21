@@ -13,7 +13,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --steel:#618FB4; --ocean:#145A95; --slate:#1F466B; --candoo:#DA1F26; --jet:#221F1F;
+    --steel:#618FB4; --ocean:#145A95; --slate:#1F466B; --jet:#221F1F;
     --bg:#FAFBFD; --card:#FFFFFF; --line:#E3EBF3;
     --soft:#F6F8FB; --row:#FAFBFD; --row-hover:#EEF4FB;
     --ink:#1F2937; --muted:#64748B; --good:#2E8B57; --warn:#E8A33D; --bad:#C0392B;
@@ -21,8 +21,8 @@
     color-scheme:light;
   }
   html[data-theme="dark"]{
-    --bg:#171515; --card:#221F1F; --line:#3A3434; --soft:#2A2626; --row:#1D1A1A; --row-hover:#2B2424;
-    --ink:#F8F6F6; --muted:#C8BFC0; --steel:#E2555B; --ocean:#DA1F26; --slate:#221F1F;
+    --bg:#111827; --card:#172033; --line:#2B3C55; --soft:#1D2A40; --row:#141E2E; --row-hover:#20334C;
+    --ink:#F6FAFF; --muted:#C2D1E1; --steel:#7FB0D7; --ocean:#4B93C8; --slate:#0E3152;
     --shadow:0 4px 16px rgba(0,0,0,.28); --shadow-lg:0 12px 34px rgba(0,0,0,.42);
     color-scheme:dark;
   }
@@ -36,7 +36,7 @@
   .btn:hover{background:var(--slate);}
   #loginErr{display:none;color:var(--bad);font-size:13px;margin-top:14px;line-height:1.5;}
   header{display:flex;align-items:center;gap:16px;padding:11px 30px;background:linear-gradient(135deg,var(--slate) 0%,var(--ocean) 58%,var(--steel) 100%);color:#fff;box-shadow:var(--shadow-lg);flex-wrap:wrap;position:sticky;top:0;z-index:20;}
-  html[data-theme="dark"] header{background:linear-gradient(135deg,#221F1F 0%,#4B1719 58%,#DA1F26 100%);}
+  html[data-theme="dark"] header{background:linear-gradient(135deg,#0E3152 0%,#145A95 58%,#618FB4 100%);}
   .brand{display:flex;align-items:center;gap:14px;}
   .brand-logo{background:#fff;border-radius:9px;padding:6px 11px;display:flex;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.15);}
   .brand-logo img{height:30px;width:auto;display:block;}
@@ -89,7 +89,7 @@
   .blbl.bsym{flex:0 0 auto;font-size:13px;color:#9aa7b5;}
   .brow.cur .blbl.bsym{color:var(--c);}
   .cfl{display:inline-flex;align-items:center;gap:5px;cursor:pointer;}
-  .cfl input[type=checkbox]{width:12px;height:12px;accent-color:#DA1F26;cursor:pointer;margin:0;}
+  .cfl input[type=checkbox]{width:12px;height:12px;accent-color:var(--ocean);cursor:pointer;margin:0;}
   .dur.hot{color:#C0392B;background:#FCEBEB;border-radius:8px;padding:2px 8px;font-weight:800;} /* ageing over the stage's limit */
   .qp-load{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:800;color:var(--ocean);}
   .qp-spin{width:14px;height:14px;border:2px solid #cfe0f0;border-top-color:var(--ocean);border-radius:50%;animation:qpspin .7s linear infinite;display:inline-block;}
@@ -141,6 +141,10 @@
   .source-note{margin:0 0 10px;padding:8px 11px;border:1px solid var(--line);border-radius:10px;background:var(--soft);color:var(--muted);font-size:12.5px;font-weight:700;line-height:1.35;}
   .source-note strong{color:var(--ink);}
   .source-empty{padding:12px 15px 14px;color:var(--muted);font-size:12.5px;font-weight:700;line-height:1.35;}
+  .source-empty strong{display:block;color:var(--ink);font-size:13.5px;margin-bottom:4px;}
+  .source-issue-chip{align-items:flex-start;text-align:left;min-width:150px;max-width:190px;background:color-mix(in srgb,#C0392B 12%,var(--card))!important;}
+  .source-issue-chip b{color:#C0392B!important;white-space:normal;font-size:12px!important;line-height:1.2;}
+  .source-issue-chip .dline{color:var(--muted);font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.35px;}
   .tcard .big{font-size:24px;font-weight:800;color:var(--tc,var(--ocean));line-height:1;letter-spacing:-1px;}
   .tcard .mini{font-size:11.5px;color:var(--muted);margin-top:4px;}
   .big.good{color:var(--good);} .big.bad{color:var(--bad);}
@@ -153,11 +157,11 @@
   .split-row .seg .seglbl{display:flex;align-items:center;justify-content:center;gap:4px;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;font-weight:700;margin-top:6px;}
   .wrap{padding:0 30px 46px;margin-top:14px;overflow:auto;} /* NO top padding: scrolled rows would show through it above the pinned header */
   table{border-collapse:separate;border-spacing:0;width:100%;font-size:13.5px;background:var(--card);border:1px solid var(--line);border-radius:13px;overflow:hidden;overflow:clip;box-shadow:var(--shadow);} /* overflow:clip keeps rounded corners WITHOUT breaking the sticky header (hidden would trap it) */
-  thead tr.countrow th{position:sticky;top:56px;z-index:2;background:#FBEAEA;color:#DA1F26;text-align:left;padding:3px 8px;white-space:nowrap;font-weight:800;font-size:12px;letter-spacing:.03em;border-bottom:1px solid var(--line);box-shadow:-1px 0 0 #FBEAEA,1px 0 0 #FBEAEA;}
-  thead tr.countrow th .cnum{font-size:13px;font-weight:800;color:#DA1F26;}
-  thead tr.countrow th .clbl{font-size:12px;font-weight:800;color:#DA1F26;}
-  thead tr.headrow th{position:sticky;top:0;z-index:3;background:#DA1F26;color:#fff;text-align:left;vertical-align:top;padding:9px 8px;white-space:nowrap;font-weight:700;border-right:1px solid rgba(255,255,255,.16);line-height:1.35;box-shadow:-1px 0 0 #DA1F26,1px 0 0 #DA1F26;} /* shadows bridge sub-pixel seams caused by zoom */
-  thead tr.headrow th .small.muted{color:#FFE7E8;font-weight:600;white-space:normal;display:inline-block;max-width:140px;line-height:1.25;} /* subtitles may wrap so columns stay narrow */
+  thead tr.countrow th{position:sticky;top:56px;z-index:2;background:#EAF2F8;color:var(--slate);text-align:left;padding:3px 8px;white-space:nowrap;font-weight:800;font-size:12px;letter-spacing:.03em;border-bottom:1px solid var(--line);box-shadow:-1px 0 0 #EAF2F8,1px 0 0 #EAF2F8;}
+  thead tr.countrow th .cnum{font-size:13px;font-weight:800;color:var(--ocean);}
+  thead tr.countrow th .clbl{font-size:12px;font-weight:800;color:var(--slate);}
+  thead tr.headrow th{position:sticky;top:0;z-index:3;background:var(--slate);color:#fff;text-align:left;vertical-align:top;padding:9px 8px;white-space:nowrap;font-weight:700;border-right:1px solid rgba(255,255,255,.16);line-height:1.35;box-shadow:-1px 0 0 var(--slate),1px 0 0 var(--slate);} /* shadows bridge sub-pixel seams caused by zoom */
+  thead tr.headrow th .small.muted{color:#DCEBF7;font-weight:600;white-space:normal;display:inline-block;max-width:140px;line-height:1.25;} /* subtitles may wrap so columns stay narrow */
   thead tr.headrow th .thi{margin-right:6px;}
   .wrap>table{table-layout:fixed;min-width:1600px;} /* fixed columns: widths never jump when filters change the content */
   .wrap>table thead tr.headrow th:nth-child(1){width:6%}   .wrap>table thead tr.headrow th:nth-child(2){width:9%}
@@ -302,7 +306,7 @@
   <button class="hbtn theme-toggle" onclick="toggleTheme()" id="themeBtn" type="button" aria-label="Switch colour theme">Dark</button>
   <button class="hbtn" onclick="refreshAll(true)" id="refreshBtn" style="display:none">↻ Refresh</button>
   <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
-  <span class="ver">v55</span>
+  <span class="ver">v56</span>
 </header>
 <div class="controls" id="controls" style="display:none">
   <div class="ctrl"><label>From</label><input type="date" id="fromDate" onchange="refreshAll()"></div>
@@ -356,7 +360,7 @@
 const CRM_ORG    = 'https://operations-ifahr-live.crm15.dynamics.com';
 const CRM_BASE   = CRM_ORG + '/api/data/v9.2';
 const CRM_SCOPE  = CRM_ORG + '/user_impersonation';
-const DASHBOARD_VERSION = 'v55';
+const DASHBOARD_VERSION = 'v56';
 const MSAL_CONFIG = {
   auth: {
     clientId: '8a4338bf-6c78-4a70-9c62-478bb19b171c',
@@ -381,6 +385,7 @@ let DATA_NEWEST_UTC = null;
 let DATA_READ_UTC = null;
 let prpoDatasetCache = null;
 let prpoDatasetPromise = null;
+let SOURCE_ISSUES = [];
 
 let QUOTE_TYPE_FIELD = '';
 let QT_DETECTED = false;
@@ -401,6 +406,45 @@ function quoteUrl(id){ return CRM_ORG + '/main.aspx?pagetype=entityrecord&etn=qu
 
 function setStatus(txt, cls){ document.getElementById('statusTxt').textContent = txt;
   const d=document.getElementById('statusDot'); d.className='dot'+(cls?(' '+cls):''); }
+
+function sourceIssueReason(error){
+  const msg = String(error && error.message ? error.message : (error || '')).trim();
+  if(/failed to fetch|networkerror|load failed/i.test(msg)) return 'The browser could not reach this source from this page.';
+  if(/returned\s+\d+/i.test(msg)) return msg.replace(/^PR\/PO source /,'The PR/PO source ');
+  if(msg) return msg;
+  return 'The source did not return data.';
+}
+function sourceFailure(key, label, band, error){
+  const reason = sourceIssueReason(error);
+  const message = key === 'prpo'
+    ? 'The RFQ source could not be reached - the rest of this page is live and correct.'
+    : label + ' could not be read - this page is showing the sources that are still available.';
+  return { key, label, band, message, reason, at:new Date().toISOString() };
+}
+async function readSource(key, label, band, fn, fallback){
+  try{ return { ok:true, value:await fn(), issue:null }; }
+  catch(e){ return { ok:false, value:fallback, issue:sourceFailure(key, label, band, e) }; }
+}
+function mergeSourceIssues(){
+  const out = [], seen = {};
+  for(let i=0;i<arguments.length;i++){
+    (arguments[i]||[]).forEach(issue=>{
+      if(!issue || seen[issue.key]) return;
+      seen[issue.key] = true; out.push(issue);
+    });
+  }
+  return out;
+}
+function sourceIssue(key){ return (SOURCE_ISSUES||[]).find(x=>x && x.key===key) || null; }
+function sourceIssueMessage(issue){
+  if(!issue) return '';
+  return issue.message + (issue.reason ? ' Reason: '+issue.reason : '');
+}
+function sourceWarningText(issues){
+  const n=(issues||[]).length;
+  if(!n) return '';
+  return n===1 ? 'could not read one source' : 'could not read '+n+' sources';
+}
 
 async function initMsal(){
   if(typeof msal==='undefined') throw new Error('Microsoft sign-in library failed to load (blocked by network). Reload, and if it persists ask IT to allow alcdn.msauth.net.');
@@ -471,10 +515,11 @@ function updateFreshnessStamps(newestUtc, readUtc){
   DATA_READ_UTC = readUtc || DATA_READ_UTC || new Date().toISOString();
   const newestEl=document.getElementById('newestStamp'), readEl=document.getElementById('readStamp');
   const state=freshnessState(DATA_NEWEST_UTC, DATA_READ_UTC);
+  const warnText = sourceWarningText(SOURCE_ISSUES);
   if(newestEl) newestEl.textContent = 'newest record '+fmtDubai(DATA_NEWEST_UTC)+(state.text ? ' · '+state.text : '');
-  if(readEl) readEl.textContent = 'read '+fmtDubai(DATA_READ_UTC);
+  if(readEl) readEl.textContent = 'read '+fmtDubai(DATA_READ_UTC)+(warnText ? ' · '+warnText : '');
   setStampClass(newestEl, state.cls);
-  setStampClass(readEl, 'live');
+  setStampClass(readEl, warnText ? 'warn' : 'live');
   return state;
 }
 
@@ -630,22 +675,29 @@ function apprSpan(recs, typeVals){
 async function fetchAndJoin(fromISO, toISO, force){
   const rng = "createdon ge "+fromISO+" and createdon le "+toISO;
   const qtSel = QUOTE_TYPE_FIELD ? (','+QUOTE_TYPE_FIELD) : '';
-  const [quotes, emails, approvals, wos, bookings, prpoDataset] = await Promise.all([
-    dvGet("quotes?$select=quoteid,quotenumber,createdon,statuscode,name,_opportunityid_value,_ssg_communityproject_value"+qtSel
+  const [quotesRes, emailsRes, approvalsRes, wosRes, bookingsRes, prpoRes] = await Promise.all([
+    readSource('quotes', 'Quotes', 'table', () => dvGet("quotes?$select=quoteid,quotenumber,createdon,statuscode,name,_opportunityid_value,_ssg_communityproject_value"+qtSel
       + "&$expand=opportunityid($select=createdon,name,ssg_textdepartment)"
-      + "&$filter="+encodeURIComponent(rng)),
-    dvGet("emails?$select=subject,createdon,_regardingobjectid_value"
+      + "&$filter="+encodeURIComponent(rng)), []),
+    readSource('emails', 'RFQ email history', 'rfq-email', () => dvGet("emails?$select=subject,createdon,_regardingobjectid_value"
       + "&$expand=regardingobjectid_quote($select=quotenumber)"
-      + "&$filter="+encodeURIComponent("startswith(subject,'RFQ Completion Notification') and "+rng)),
-    dvGet("ssg_approvalhistories?$select=ssg_name,ssg_approvaltype,ssg_status,ssg_approvedrejectedon,_ssg_approver_value,createdon,modifiedon,_ssg_quote_value"
-      + "&$filter="+encodeURIComponent(rng)),
-    dvGet("msdyn_workorders?$select=msdyn_name,ssg_quotenumber,msdyn_systemstatus,createdon,_ssg_department_value"
-      + "&$filter="+encodeURIComponent("_ssg_division_value eq "+CANDOO_DIVISION+" and "+rng)),
-    dvGet("bookableresourcebookings?$select=ssg_bookingnumber,ssg_plannedstartdate,starttime,endtime,createdon,_msdyn_workorder_value"
+      + "&$filter="+encodeURIComponent("startswith(subject,'RFQ Completion Notification') and "+rng)), []),
+    readSource('approvals', 'Approval history', 'approval', () => dvGet("ssg_approvalhistories?$select=ssg_name,ssg_approvaltype,ssg_status,ssg_approvedrejectedon,_ssg_approver_value,createdon,modifiedon,_ssg_quote_value"
+      + "&$filter="+encodeURIComponent(rng)), []),
+    readSource('workorders', 'Work orders', 'work', () => dvGet("msdyn_workorders?$select=msdyn_name,ssg_quotenumber,msdyn_systemstatus,createdon,_ssg_department_value"
+      + "&$filter="+encodeURIComponent("_ssg_division_value eq "+CANDOO_DIVISION+" and "+rng)), []),
+    readSource('bookings', 'Bookings', 'work', () => dvGet("bookableresourcebookings?$select=ssg_bookingnumber,ssg_plannedstartdate,starttime,endtime,createdon,_msdyn_workorder_value"
       + "&$expand=msdyn_workorder($select=ssg_quotenumber,_ssg_division_value)"
-      + "&$filter="+encodeURIComponent("msdyn_workorder/_ssg_division_value eq "+CANDOO_DIVISION+" and "+rng)),
-    fetchPrpoDataset(force)
+      + "&$filter="+encodeURIComponent("msdyn_workorder/_ssg_division_value eq "+CANDOO_DIVISION+" and "+rng)), []),
+    readSource('prpo', 'PR/PO RFQ source', 'rfq', () => fetchPrpoDataset(force), null)
   ]);
+  const quotes = quotesRes.value || [];
+  const emails = emailsRes.value || [];
+  const approvals = approvalsRes.value || [];
+  const wos = wosRes.value || [];
+  const bookings = bookingsRes.value || [];
+  const prpoDataset = prpoRes.value;
+  const sourceIssues = mergeSourceIssues([quotesRes.issue, emailsRes.issue, approvalsRes.issue, wosRes.issue, bookingsRes.issue, prpoRes.issue].filter(Boolean));
   const prRows = normalizePrRows(prpoDataset && prpoDataset.pr ? prpoDataset.pr.rows : []).filter(isCpr);
   const readUtc = new Date().toISOString();
 
@@ -751,8 +803,9 @@ async function fetchAndJoin(fromISO, toISO, force){
     [prpoDataset && prpoDataset.freshness && prpoDataset.freshness.effectiveDataTimeUtc, prpoDataset && prpoDataset.generatedAt]
   ));
   return { rows, prRows, emailByQ,
-    prpoMeta: prpoDataset ? { revision: prpoDataset.revision, generatedAt: prpoDataset.generatedAt, sourceState: prpoDataset.sourceState, freshness: prpoDataset.freshness || null, exportAuthority: prpoDataset.exportAuthority || null } : null,
+    prpoMeta: prpoDataset ? { revision: prpoDataset.revision, generatedAt: prpoDataset.generatedAt, sourceState: prpoDataset.sourceState, freshness: prpoDataset.freshness || null, exportAuthority: prpoDataset.exportAuthority || null } : (prpoRes.issue ? { sourceState:'unavailable', error:prpoRes.issue } : null),
     newestDataUtc, readUtc,
+    sourceIssues,
     counts: { quotes: quotes.length, wo: Object.keys(woByQ).length, rfqGate: rfqSourceRows(prRows).length, appr: approvals.length, pr: prRows.length } };
 }
 
@@ -762,14 +815,14 @@ const CACHE_TTL_MS = 5*60*1000;
 // ── Loading indicator + last-data cache (show previous data instantly, refresh in background) ──
 function qpSetLoading(on){ var el=document.getElementById('qpLoad'); if(el) el.style.display = on ? 'inline-flex' : 'none'; }
 function qpCacheSave(){
-  try{ window.__QP_DATA = { DATA:DATA, TREND_DATA:TREND_DATA, PR_ROWS:PR_ROWS, EMAIL_BY_Q:EMAIL_BY_Q, PRPO_META:PRPO_META, DATA_NEWEST_UTC:DATA_NEWEST_UTC, DATA_READ_UTC:DATA_READ_UTC, QT:QUOTE_TYPE_FIELD, at:Date.now() }; }catch(e){}
+  try{ window.__QP_DATA = { DATA:DATA, TREND_DATA:TREND_DATA, PR_ROWS:PR_ROWS, EMAIL_BY_Q:EMAIL_BY_Q, PRPO_META:PRPO_META, SOURCE_ISSUES:SOURCE_ISSUES, DATA_NEWEST_UTC:DATA_NEWEST_UTC, DATA_READ_UTC:DATA_READ_UTC, QT:QUOTE_TYPE_FIELD, at:Date.now() }; }catch(e){}
   try{ var s = JSON.stringify(window.__QP_DATA); if(s.length < 4200000) localStorage.setItem('vqp_cache', s); }catch(e){} // persist across page reloads; skip if over quota
 }
 function qpCacheLoad(){
   var c = (typeof window!=='undefined') ? window.__QP_DATA : null;
   if(!c || !c.DATA){ try{ c = JSON.parse(localStorage.getItem('vqp_cache')||'null'); }catch(e){ c=null; } } // fall back to the last saved copy
   if(!c || !c.DATA) return false;
-  DATA=c.DATA; TREND_DATA=c.TREND_DATA; PR_ROWS=c.PR_ROWS; EMAIL_BY_Q=c.EMAIL_BY_Q; PRPO_META=c.PRPO_META||null;
+  DATA=c.DATA; TREND_DATA=c.TREND_DATA; PR_ROWS=c.PR_ROWS; EMAIL_BY_Q=c.EMAIL_BY_Q; PRPO_META=c.PRPO_META||null; SOURCE_ISSUES=c.SOURCE_ISSUES||[];
   DATA_NEWEST_UTC=c.DATA_NEWEST_UTC||null; DATA_READ_UTC=c.DATA_READ_UTC||null;
   if(DATA_NEWEST_UTC || DATA_READ_UTC) updateFreshnessStamps(DATA_NEWEST_UTC, DATA_READ_UTC);
   if(c.QT){ QUOTE_TYPE_FIELD=c.QT; QT_DETECTED=true; }
@@ -816,16 +869,18 @@ async function refreshAll(force){
     PR_ROWS = tableRes.prRows || [];
     EMAIL_BY_Q = tableRes.emailByQ || {};
     PRPO_META = tableRes.prpoMeta || trendRes.prpoMeta || null;
+    SOURCE_ISSUES = mergeSourceIssues(tableRes.sourceIssues, trendRes.sourceIssues);
     DATA_NEWEST_UTC = latestDate([tableRes.newestDataUtc, trendRes.newestDataUtc]);
     DATA_READ_UTC = latestDate([tableRes.readUtc, trendRes.readUtc]) || new Date().toISOString();
     updateFreshnessStamps(DATA_NEWEST_UTC, DATA_READ_UTC);
     populateDepts();
     populateProjects();
     render(); renderKpis();
-    setStatus('live · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), 'live');
+    const warnText = sourceWarningText(SOURCE_ISSUES);
+    setStatus((warnText ? 'live · '+warnText : 'live')+' · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), warnText ? 'warn' : 'live');
     qpCacheSave();
   }catch(e){
-    console.error(e); setStatus('error', 'err'); // no alert — background refreshes must fail quietly, last data stays on screen
+    console.error(e); setStatus('page refresh failed', 'err'); // no alert — background refreshes must fail quietly, last data stays on screen
   }finally{ qpSetLoading(false); }
 }
 
@@ -1049,7 +1104,7 @@ function renderCountRow(rows){
     + (function(){          /* Status — dropdown filter */
         const sts = [...new Set(DATA.map(r=>r.status).filter(Boolean))].sort();
         return '<th><select onchange="setStatusFilter(this.value)" title="Filter the table by quote status" '
-          + 'style="font-family:inherit;font-size:11.5px;font-weight:700;color:#DA1F26;background:#fff;border:1px solid var(--line);border-radius:8px;padding:2px 6px;max-width:160px;">'
+          + 'style="font-family:inherit;font-size:11.5px;font-weight:700;color:var(--ocean);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:2px 6px;max-width:160px;">'
           + '<option value="">All Statuses</option>'
           + sts.map(s=>'<option value="'+escapeHtml(s)+'"'+(STATUS_FILTER===s?' selected':'')+'>'+escapeHtml(gateText(s))+'</option>').join('')
           + '</select></th>';
@@ -1155,6 +1210,14 @@ function metricValues(m,rows){
 function metricHasSource(m,wb,trendRows){
   return wb.some(b=>metricRowsForWindow(m,b,trendRows).length>0);
 }
+function metricSourceIssue(m){
+  if(!m) return null;
+  if(m.k==='rfq') return sourceIssue('prpo');
+  if(m.k==='internal' || m.k==='customer') return sourceIssue('approvals');
+  if(m.k==='workExec') return sourceIssue('bookings') || sourceIssue('workorders');
+  if(m.k==='count' || m.k==='drafting' || m.k==='ageing') return sourceIssue('quotes');
+  return null;
+}
 function bucketCardNoSource(m,msg){
   return '<div class="bcard" style="--c:'+m.c+'">'
     + '<div class="bcard-head"><span class="bicon">'+m.icon+'</span><div><div class="btitle">'+m.label+'</div><div class="bdesc">'+m.desc+'</div></div></div>'
@@ -1164,6 +1227,13 @@ function renderKpis(){
   const trendRows = activeTrendRows();
   const wb = WEEK_BOUNDS.length ? WEEK_BOUNDS : weekBoundaries();
   const cards = TREND_METRICS.map(m=>{
+    const issue = metricSourceIssue(m);
+    if(m.k==='rfq' && issue && m.split){
+      const cnt2=[0,0,0], av2=[null,null,null];
+      for(let w=0;w<3;w++){ const rows2=quoteBucketRows(trendRows,wb[w]); const v2=rows2.map(r=>stageHitMs(r,m.split)).filter(x=>x!=null); cnt2[w]=v2.length; av2[w]=avg(v2); }
+      return bucketCardSplitSourceIssue(m,cnt2,av2,wb,sourceIssueMessage(issue));
+    }
+    if(issue) return bucketCardNoSource(m, sourceIssueMessage(issue));
     if(!metricHasSource(m,wb,trendRows)) return bucketCardNoSource(m, sourceEmptyMessage(m.label));
     const cnt=[0,0,0], av=[null,null,null];
     for(let w=0;w<3;w++){
@@ -1231,6 +1301,32 @@ function bucketCardSplit(m,cnt,av,cnt2,av2,wb){
     + rowMeta(wb).map(row).join('')
     + '</div>';
 }
+function bucketCardSplitSourceIssue(m,cnt2,av2,wb,msg){
+  const grpEst=(i,c,a,cd,ad)=>'<span class="bgrp est2" title="click to drill through" onclick="event.stopPropagation();drillBucket(\'est\','+i+')">'
+    + '<b>'+c.toLocaleString()+'<span class="dotsep">·</span>'+(a!=null?fmtDurMs(a):'—')+'</b>'
+    + ((cd||ad)?'<span class="dline">'+cd+ad+'</span>':'')
+    + '</span>';
+  const issueChip='<span class="bgrp pr2 source-issue-chip" title="'+escapeHtml(msg)+'"><b>source not read</b><span class="dline">RFQ gate 0.05</span></span>';
+  const row=(meta)=>{
+    const i=meta.i, isCur=!!meta.cur;
+    const sym = isCur ? '▶' : (i===1 ? '◀' : '■');
+    const compare = isCur ? 1 : null;
+    const cd2=compare!=null?deltaCount(cnt2[i],cnt2[compare]):'', ad2=compare!=null?deltaDur(av2[i],av2[compare]):'';
+    return '<div class="brow'+(isCur?' cur':'')+'" title="'+escapeHtml(meta.lbl+' · '+fmtRange(wb[i]))+'">'
+      + '<span class="blbl bsym" title="'+escapeHtml(meta.lbl)+'">'+sym+'</span>'
+      + grpEst(i,cnt2[i],av2[i],cd2,ad2)
+      + '<span class="bdivider"></span>'
+      + issueChip
+      + '</div>';
+  };
+  return '<div class="bcard" style="--c:'+m.c+'">'
+    + '<div class="bcard-head"><span class="bicon">'+m.icon+'</span><div><div class="btitle">'+m.label+'</div>'
+    + '<div class="bdesc"><span style="color:#534AB7;font-weight:700;">Estimation</span> live · <span style="color:#C0392B;font-weight:700;">RFQ source not read</span></div></div></div>'
+    + '<div class="baccent"></div>'
+    + '<div class="source-note"><strong>RFQ source warning:</strong> '+escapeHtml(msg)+'</div>'
+    + rowMeta(wb).map(row).join('')
+    + '</div>';
+}
 
 // Project location of a PR = segment 5 of the F&O ledger dimension
 // e.g. "-Variation-402400-Building Services--THE PRISM TOWER-Materials-Sub_Contracted-" → "THE PRISM TOWER"
@@ -1266,6 +1362,18 @@ function rfqRecs(){
   });
 }
 function renderProc(){
+  const rfqIssue = sourceIssue('prpo');
+  if(rfqIssue){
+    const msg = sourceIssueMessage(rfqIssue);
+    document.getElementById('procKpis').innerHTML =
+        '<div class="procHead">Procurement · RFQ Performance'
+      + '<small>· PR created → inquiry sent to suppliers · 6h target under review</small></div>'
+      + '<div class="source-note"><strong>RFQ source warning:</strong> '+escapeHtml(msg)+'</div>'
+      + '<div class="cardrow">'
+      + bucketCardNoSource({c:'#C0392B', icon:'✉️', label:'RFQ source not read', desc:'authorised gate 0.05'}, msg)
+      + '</div>';
+    return;
+  }
   const recs = rfqRecs();
   const measured = recs.filter(r=>r.rfqMs!=null);
   const under6  = measured.filter(r=> r.rfqMs<=RFQ_THRESHOLD_MS);
@@ -1411,7 +1519,7 @@ function dismissSplash(){
 }
 
 /* ============================ BOOT ============================ */
-window.__QP_TEST__ = { weekBoundaries, dubaiWeekStartUtc, freshnessState, sourceEmptyMessage, rfqSourceRows, rfqElapsedMs, median, applyTheme, toggleTheme };
+window.__QP_TEST__ = { weekBoundaries, dubaiWeekStartUtc, freshnessState, sourceEmptyMessage, rfqSourceRows, rfqElapsedMs, median, applyTheme, toggleTheme, sourceFailure, mergeSourceIssues, sourceIssueMessage, fetchAndJoin };
 initTheme();
 initSplash();
 (async function(){

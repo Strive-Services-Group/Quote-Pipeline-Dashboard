@@ -94,7 +94,46 @@ qp.toggleTheme();
 assert.equal(documentElement.attrs['data-theme'], 'light');
 assert.equal(storage.qp_theme, 'light');
 
-console.log(JSON.stringify({
+const prpoIssue = qp.sourceFailure('prpo', 'PR/PO RFQ source', 'rfq', new TypeError('Failed to fetch'));
+assert.match(qp.sourceIssueMessage(prpoIssue), /RFQ source could not be reached/);
+assert.match(qp.sourceIssueMessage(prpoIssue), /rest of this page is live and correct/);
+assert.doesNotMatch(qp.sourceIssueMessage(prpoIssue), /TypeError/);
+assert.equal(qp.mergeSourceIssues([prpoIssue], [prpoIssue]).length, 1);
+
+async function runAsyncProof() {
+  sandbox.fetchPrpoDataset = async () => { throw new TypeError('Failed to fetch'); };
+  sandbox.dvGet = async (path) => {
+    if (path.startsWith('quotes?')) {
+      return [{
+        quoteid: '00000000-0000-0000-0000-000000000001',
+        quotenumber: 'Q-PRPO-DOWN',
+        createdon: '2026-09-21T07:00:00Z',
+        statuscode: 1,
+        'statuscode@OData.Community.Display.V1.FormattedValue': 'Draft',
+        name: 'PRPO unavailable proof quote',
+        opportunityid: { createdon: '2026-09-21T06:00:00Z', name: 'Proof opportunity', ssg_textdepartment: 'Commercial' }
+      }];
+    }
+    if (path.startsWith('msdyn_workorders?')) {
+      return [{
+        msdyn_name: 'WO-PROOF',
+        ssg_quotenumber: 'Q-PRPO-DOWN',
+        msdyn_systemstatus: 1,
+        createdon: '2026-09-21T09:00:00Z',
+        '_ssg_department_value@OData.Community.Display.V1.FormattedValue': 'Commercial'
+      }];
+    }
+    return [];
+  };
+  const joined = await qp.fetchAndJoin('2026-09-20T20:00:00.000Z', '2026-09-21T19:59:59.000Z', true);
+  assert.equal(joined.rows.length, 1);
+  assert.equal(joined.prRows.length, 0);
+  assert.equal(joined.rows[0].quoteNo, 'Q-PRPO-DOWN');
+  assert.equal(joined.rows[0].rfq.val, null);
+  assert(joined.rows[0].drafting.val, 'Dataverse-dependent drafting should still calculate');
+  assert(joined.sourceIssues.some(issue => issue.key === 'prpo'), 'PR/PO failure should be reported as a contained source issue');
+
+  console.log(JSON.stringify({
   monday: { currentStartUtc: iso(monday[2].start), samePointLastWeekEndUtc: iso(monday[1].end), currentLabel: monday[2].label },
   midweek: { currentElapsedMs: midweek[2].end.getTime() - midweek[2].start.getTime(), priorElapsedMs: midweek[1].end.getTime() - midweek[1].start.getTime() },
   sunday: { currentStartUtc: iso(sunday[2].start), currentElapsedMs: sunday[2].end.getTime() - sunday[2].start.getTime() },
@@ -105,5 +144,12 @@ console.log(JSON.stringify({
   },
   noSourceMessage: emptyMessage,
   realZero: { sourceRows: sourceRows.length, underSixHours: elapsed.filter(ms => ms <= 6 * 3600000).length, medianHours: qp.median(elapsed) / 3600000 },
-  theme: { persistedAfterToggle: storage.qp_theme, documentTheme: documentElement.attrs['data-theme'] }
-}, null, 2));
+    prpoFailure: { rowsReturned: joined.rows.length, issueKeys: joined.sourceIssues.map(issue => issue.key), rfqValue: joined.rows[0].rfq.val },
+    theme: { persistedAfterToggle: storage.qp_theme, documentTheme: documentElement.attrs['data-theme'] }
+  }, null, 2));
+}
+
+runAsyncProof().catch(err => {
+  console.error(err);
+  process.exit(1);
+});
