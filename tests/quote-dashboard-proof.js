@@ -76,6 +76,9 @@ assert.match(html, /PRPO_DATASET_URL \+ '\?refresh=0'/);
 assert.doesNotMatch(html, /PRPO_DATASET_URL \+ \(force \? '\?refresh=1'/);
 assert.doesNotMatch(html, /4200000/);
 assert.doesNotMatch(html, /raw:\s*row/);
+assert.match(html, /indexedDB\.open\(QP_CACHE_DB,1\)/);
+assert.match(html, /if\(PRPO_LOADING\) return; \/\/ keep the last complete durable snapshot/);
+assert.match(html, /const hadCache = await qpCacheLoad\(\)/);
 
 const guardedFreshness = qp.recordFreshness([
   '2026-09-20T08:00:00Z',

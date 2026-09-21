@@ -417,6 +417,11 @@ let SOURCE_ISSUES = [];
 let PRPO_LOADING = false;
 let TREND_SAME_AS_DATA = false;
 let REFRESH_SEQUENCE = 0;
+let QP_CACHE_WRITE = Promise.resolve();
+
+const QP_CACHE_DB = 'quote-pipeline-dashboard';
+const QP_CACHE_STORE = 'snapshots';
+const QP_CACHE_KEY = 'latest';
 
 let QUOTE_TYPE_FIELD = '';
 let QT_DETECTED = false;
@@ -577,7 +582,7 @@ async function enterApp(){
   ['controls','trendKpis','procKpis','wrap'].forEach(id=>document.getElementById(id).style.display='');
   ['refreshBtn','signoutBtn'].forEach(id=>document.getElementById(id).style.display='');
   const up=document.getElementById('userPill'); up.style.display=''; up.textContent = account.name || account.username || 'Signed in';
-  qpFirstRender(); // cache-first: show last data instantly, refresh in background
+  await qpFirstRender(); // cache-first: show last data instantly, refresh in background
   if(refreshTimer) clearInterval(refreshTimer);
   refreshTimer = setInterval(()=>refreshAll(true).catch(()=>{}), 2*60*1000);
 }
@@ -914,6 +919,35 @@ function renderLoadingState(msg){
     + '</div>';
   if(empty){ empty.style.display=''; empty.innerHTML='<div class="loading-note"><span class="qp-spin"></span> '+escapeHtml(msg || 'Loading live quote records…')+'</div>'; }
 }
+function qpCacheOpen(){
+  if(typeof indexedDB==='undefined') return Promise.resolve(null);
+  return new Promise((resolve,reject)=>{
+    const request=indexedDB.open(QP_CACHE_DB,1);
+    request.onupgradeneeded=()=>{ const db=request.result; if(!db.objectStoreNames.contains(QP_CACHE_STORE)) db.createObjectStore(QP_CACHE_STORE); };
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error || new Error('Dashboard cache could not be opened.'));
+  });
+}
+async function qpCacheReadStored(){
+  const db=await qpCacheOpen();
+  if(!db) return null;
+  return new Promise((resolve,reject)=>{
+    const request=db.transaction(QP_CACHE_STORE,'readonly').objectStore(QP_CACHE_STORE).get(QP_CACHE_KEY);
+    request.onsuccess=()=>{ db.close(); resolve(request.result || null); };
+    request.onerror=()=>{ db.close(); reject(request.error || new Error('Dashboard cache could not be read.')); };
+  });
+}
+async function qpCacheWriteStored(payload){
+  const db=await qpCacheOpen();
+  if(!db) return;
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(QP_CACHE_STORE,'readwrite');
+    tx.objectStore(QP_CACHE_STORE).put(payload,QP_CACHE_KEY);
+    tx.oncomplete=()=>{ db.close(); resolve(); };
+    tx.onerror=()=>{ db.close(); reject(tx.error || new Error('Dashboard cache could not be written.')); };
+    tx.onabort=()=>{ db.close(); reject(tx.error || new Error('Dashboard cache write was aborted.')); };
+  });
+}
 function qpCacheSave(){
   const trendSame = TREND_SAME_AS_DATA || TREND_DATA === DATA;
   const payload = { DATA:DATA, TREND_DATA:trendSame?null:TREND_DATA, TREND_SAME_AS_DATA:trendSame,
@@ -921,15 +955,15 @@ function qpCacheSave(){
     SOURCE_ISSUES:SOURCE_ISSUES, DATA_NEWEST_UTC:DATA_NEWEST_UTC, DATA_READ_UTC:DATA_READ_UTC,
     DATA_FUTURE_IGNORED:DATA_FUTURE_IGNORED, QT:QUOTE_TYPE_FIELD, at:Date.now() };
   try{ window.__QP_DATA = payload; }catch(e){}
-  try{ localStorage.setItem('vqp_cache', JSON.stringify(payload)); }
-  catch(e){
-    // A usable quote cache is more important than retaining the PR/PO enrichment if browser quota is tight.
-    try{ const compact=Object.assign({},payload,{PR_ROWS:[],PRPO_META:null,PRPO_READY:false}); localStorage.setItem('vqp_cache',JSON.stringify(compact)); }catch(e2){}
-  }
+  if(PRPO_LOADING) return; // keep the last complete durable snapshot until every source has settled
+  QP_CACHE_WRITE = QP_CACHE_WRITE.catch(()=>{}).then(()=>qpCacheWriteStored(payload)).then(()=>{
+    try{ localStorage.removeItem('vqp_cache'); }catch(e){} // remove any oversized legacy copy after migration
+  }).catch(()=>{});
 }
-function qpCacheLoad(){
+async function qpCacheLoad(){
   var c = (typeof window!=='undefined') ? window.__QP_DATA : null;
   if(!c || !c.DATA){ try{ c = JSON.parse(localStorage.getItem('vqp_cache')||'null'); }catch(e){ c=null; } } // fall back to the last saved copy
+  if(!c || !c.DATA){ try{ c = await qpCacheReadStored(); }catch(e){ c=null; } }
   if(!c || !c.DATA) return false;
   DATA=c.DATA; TREND_SAME_AS_DATA=!!c.TREND_SAME_AS_DATA; TREND_DATA=TREND_SAME_AS_DATA?DATA:(c.TREND_DATA||[]);
   PR_ROWS=c.PR_ROWS||[]; EMAIL_BY_Q=c.EMAIL_BY_Q||{}; PRPO_META=c.PRPO_META||null; PRPO_LOADING=c.PRPO_READY===false;
@@ -940,10 +974,10 @@ function qpCacheLoad(){
   return true;
 }
 // Paint last-known data immediately (if any), then refresh in the background.
-function qpFirstRender(){
+async function qpFirstRender(){
   try{ setDefaultDates(); }catch(e){}
   try{ WEEK_BOUNDS = weekBoundaries(); }catch(e){} // recompute (cache doesn't carry Date objects)
-  const hadCache = qpCacheLoad();
+  const hadCache = await qpCacheLoad();
   if(hadCache){ try{ populateDepts(); populateProjects(); render(); renderKpis(); }catch(e){} } // instant from cache
   else { try{ renderLoadingState('Loading live quote records…'); }catch(e){} }
   refreshAll(false); // background refresh (reuses cache if <5min, else refetch); spinner shows during network
