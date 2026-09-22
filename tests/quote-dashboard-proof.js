@@ -117,6 +117,9 @@ assert.equal(compactRows[0].createdDateTime, '2026-09-21T05:00:00Z');
 const refreshPolicy = { weekdays:[1,2,3,4,5], slotsMinutes:[305,335], marginMinutes:20 };
 assert.equal(qp.datasetScheduleState({generatedAt:'2026-09-21T05:36:00Z',refreshPolicy},'2026-09-21T06:00:00Z').stale, false);
 assert.equal(qp.datasetScheduleState({generatedAt:'2026-09-21T05:04:00Z',refreshPolicy},'2026-09-21T06:00:00Z').stale, true);
+assert.equal(qp.staleRefreshLabel('2026-09-21T07:04:00Z'), '11:04 on 21 September');
+assert.match(html, /These figures were last refreshed at/);
+assert.match(html, /A refresh has not completed since\. They may be out of date\./);
 
 qp.applyTheme('dark');
 assert.equal(documentElement.attrs['data-theme'], 'dark');
