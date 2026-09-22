@@ -120,6 +120,9 @@
   .tcard:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);}
   .tcard.static{cursor:default;}
   .tcard.static:hover{box-shadow:var(--shadow);transform:none;}
+  .tcard.static .tcard-body2{align-items:flex-start;flex-wrap:wrap;}
+  .tcard.static .tavg{flex:1 1 150px;min-width:0;white-space:normal;line-height:1.25;}
+  .tcard.static .pendchip{background:color-mix(in srgb,var(--warn) 14%,var(--card));border:1px solid color-mix(in srgb,var(--warn) 35%,var(--line));color:#8B5E08;}
   .tcard-top{display:flex;align-items:center;gap:9px;padding:2px 15px 1px;}
   .tcard-ic{width:24px;height:24px;flex:0 0 24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;background:color-mix(in srgb,var(--tc,var(--ocean)) 13%,#fff);}
   .tcard .lbl{font-size:12.5px;color:var(--tc,var(--slate));text-transform:uppercase;letter-spacing:.6px;font-weight:800;}
@@ -280,6 +283,7 @@
   html[data-theme="dark"] .qno a,
   html[data-theme="dark"] .qno{color:#BDE6FF;}
   html[data-theme="dark"] .pendchip{background:rgba(232,163,61,.20);border:1px solid rgba(232,163,61,.45);color:#FFE7B7;}
+  html[data-theme="dark"] .tcard.static .pendchip{background:rgba(232,163,61,.20);border-color:rgba(232,163,61,.45);color:#FFE7B7;}
 </style>
 </head>
 <body>

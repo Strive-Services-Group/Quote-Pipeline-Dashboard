@@ -87,6 +87,7 @@ assert.match(html, /Waiting population:/);
 assert.match(html, /No row is assessed against the target and the percentage is suppressed\./);
 assert.doesNotMatch(html, /percentage suppressed until the target is agreed/);
 assert.doesNotMatch(html, /Within 6h target/);
+assert.match(html, /\.tcard\.static \.tavg\{[^}]*white-space:normal/);
 
 const guardedFreshness = qp.recordFreshness([
   '2026-09-20T08:00:00Z',
