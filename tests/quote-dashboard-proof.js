@@ -70,10 +70,14 @@ assert.equal(sunday[2].end.getTime() - sunday[2].start.getTime(), sunday[1].end.
 assert.equal(qp.freshnessState('2026-09-20T07:00:00Z', '2026-09-21T06:00:00Z').cls, 'live');
 assert.equal(qp.freshnessState('2026-09-19T05:00:00Z', '2026-09-21T06:00:00Z').cls, 'warn');
 assert.equal(qp.freshnessState('2026-09-17T04:59:00Z', '2026-09-21T06:00:00Z').cls, 'bad');
-assert.match(html, /v59/);
+assert.match(html, /v60/);
 assert.match(html, /PR\/PO figures still loading/);
-assert.match(html, /PRPO_DATASET_URL \+ '\?refresh=0'/);
+assert.match(html, /PRPO_DATASET_URL \+ '\?view=dashboard&refresh=0'/);
+assert.match(html, /PRPO_DATASET_URL\+'\?view=full&refresh=0'/);
 assert.doesNotMatch(html, /PRPO_DATASET_URL \+ \(force \? '\?refresh=1'/);
+assert.match(html, /bookableresourcebookings\?\$select=ssg_plannedstartdate,endtime,createdon/);
+assert.doesNotMatch(html, /bookableresourcebookings\?\$select=ssg_bookingnumber/);
+assert.match(html, /msdyn_workorder\/ssg_quotenumber ne null/);
 assert.doesNotMatch(html, /4200000/);
 assert.doesNotMatch(html, /raw:\s*row/);
 assert.match(html, /indexedDB\.open\(QP_CACHE_DB,1\)/);
@@ -95,16 +99,24 @@ assert.match(emptyMessage, /^No source data/);
 assert.match(emptyMessage, /legacy RFQ field/);
 
 const sourceRows = qp.rfqSourceRows([
-  { purchaseRequisition: 'CPR-100', createdDate: '2026-09-20T20:00:00Z', stepDate: '2026-09-21T09:00:00Z', authorisedGateNumber: '0.05' },
+  { purchaseRequisition: 'CPR-100', createdDate: '2026-09-20T20:00:00Z', createdDateTime: '2026-09-21T04:00:00Z', stepDate: '2026-09-21T09:00:00Z', authorisedGateNumber: '0.05' },
   { purchaseRequisition: 'CPR-101', createdDate: '2026-09-19T00:00:00Z', stepDate: '2026-09-20T17:00:00Z', authorisedGateName: 'Inquiry Sent to Suppliers' },
   { purchaseRequisition: 'CPR-102', createdDate: '2026-09-19T00:00:00Z', stepDate: '2026-09-20T17:00:00Z', authorisedGateNumber: '0.07' },
   { purchaseRequisition: 'PR-103', createdDate: '2026-09-19T00:00:00Z', stepDate: '2026-09-20T17:00:00Z', authorisedGateNumber: '0.05' }
 ]);
 assert.equal(sourceRows.length, 2);
 const elapsed = sourceRows.map(qp.rfqElapsedMs);
-assert.deepEqual(elapsed, [13 * 3600000, 41 * 3600000]);
-assert.equal(elapsed.filter(ms => ms <= 6 * 3600000).length, 0);
-assert.equal(qp.median(elapsed), 27 * 3600000);
+assert.deepEqual(elapsed, [5 * 3600000, 41 * 3600000]);
+assert.equal(elapsed.filter(ms => ms <= 6 * 3600000).length, 1);
+assert.equal(qp.median(elapsed), 23 * 3600000);
+assert.equal(qp.draftingClockExclusions([{ _draftingClockInvalid: true }, { _draftingClockInvalid: false }]), 1);
+const compactRows = qp.normalizePrRows([['CPR-200','Q-200','2026-09-21T05:00:00Z','2026-09-21T10:00:00Z','Commercial','','','Procurement sends inquiry/RFQ to suppliers','2026-09-21T09:00:00Z','0.05','Inquiry Sent to Suppliers']],
+  ['purchaseRequisition','quotationReference','createdDateTime','submittedDate','department','projectId','ledgerDimensionRaw','stepName','stepDate','authorisedGateNumber','authorisedGateName']);
+assert.equal(compactRows[0].purchaseRequisition, 'CPR-200');
+assert.equal(compactRows[0].createdDateTime, '2026-09-21T05:00:00Z');
+const refreshPolicy = { weekdays:[1,2,3,4,5], slotsMinutes:[305,335], marginMinutes:20 };
+assert.equal(qp.datasetScheduleState({generatedAt:'2026-09-21T05:36:00Z',refreshPolicy},'2026-09-21T06:00:00Z').stale, false);
+assert.equal(qp.datasetScheduleState({generatedAt:'2026-09-21T05:04:00Z',refreshPolicy},'2026-09-21T06:00:00Z').stale, true);
 
 qp.applyTheme('dark');
 assert.equal(documentElement.attrs['data-theme'], 'dark');

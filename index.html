@@ -56,6 +56,7 @@
   .fresh-pill{font-size:12px;gap:6px;}
   .fresh-pill.warn{background:rgba(232,163,61,.22);border-color:rgba(232,163,61,.6);}
   .fresh-pill.bad{background:rgba(192,57,43,.28);border-color:rgba(255,154,150,.72);}
+  .dataset-stale-banner{margin:10px 30px 0;padding:9px 14px;border:1px solid #D6A34D;border-left:4px solid var(--warn);border-radius:8px;background:color-mix(in srgb,var(--warn) 12%,var(--card));color:var(--ink);font-size:13px;font-weight:700;}
   .controls{display:flex;align-items:center;gap:12px;margin:10px 30px 0;padding:7px 18px;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);flex-wrap:nowrap;}
   @media(max-width:1200px){ .controls{flex-wrap:wrap;} }
   .ctrl{display:flex;align-items:center;gap:8px;}
@@ -333,8 +334,9 @@
   <button class="hbtn theme-toggle" onclick="toggleTheme()" id="themeBtn" type="button" aria-label="Switch colour theme">Dark</button>
   <button class="hbtn" onclick="refreshAll(true)" id="refreshBtn" style="display:none">↻ Refresh</button>
   <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
-  <span class="ver">v59</span>
+  <span class="ver">v60</span>
 </header>
+<div class="dataset-stale-banner" id="datasetStaleBanner" role="status" aria-live="polite" style="display:none"></div>
 <div class="controls" id="controls" style="display:none">
   <div class="ctrl"><label>From</label><input type="date" id="fromDate" onchange="refreshAll()"></div>
   <div class="ctrl"><label>To</label><input type="date" id="toDate" onchange="refreshAll()"></div>
@@ -413,6 +415,8 @@ let DATA_READ_UTC = null;
 let DATA_FUTURE_IGNORED = null;
 let prpoDatasetCache = null;
 let prpoDatasetPromise = null;
+let prpoFullDatasetCache = null;
+let prpoFullDatasetPromise = null;
 let SOURCE_ISSUES = [];
 let PRPO_LOADING = false;
 let TREND_SAME_AS_DATA = false;
@@ -576,6 +580,35 @@ function updateFreshnessStamps(newestUtc, readUtc, futureIgnored){
   setStampClass(readEl, warnText ? 'warn' : 'live');
   return state;
 }
+function datasetScheduleState(meta, nowValue){
+  const policy = meta && meta.refreshPolicy;
+  const generatedMs = ms(meta && meta.generatedAt);
+  const nowMs = ms(nowValue || new Date());
+  if(!policy || !Array.isArray(policy.weekdays) || !Array.isArray(policy.slotsMinutes) || generatedMs==null || nowMs==null){
+    return { stale:false, generatedAt:meta && meta.generatedAt || null, expectedAt:null };
+  }
+  const marginMs = Number(policy.marginMinutes || 0) * 60000;
+  let expectedMs = null;
+  for(let dayOffset=0; dayOffset<9; dayOffset++){
+    const day = new Date(nowMs - dayOffset*864e5);
+    const dayStart = Date.UTC(day.getUTCFullYear(),day.getUTCMonth(),day.getUTCDate());
+    if(!policy.weekdays.includes(new Date(dayStart).getUTCDay())) continue;
+    policy.slotsMinutes.forEach(minutes=>{
+      const slotMs = dayStart + Number(minutes)*60000;
+      if(slotMs + marginMs <= nowMs && (expectedMs==null || slotMs>expectedMs)) expectedMs=slotMs;
+    });
+  }
+  return { stale:expectedMs!=null && generatedMs<expectedMs, generatedAt:meta.generatedAt, expectedAt:expectedMs==null?null:new Date(expectedMs).toISOString() };
+}
+function updateDatasetStaleBanner(meta, nowValue){
+  const el=document.getElementById('datasetStaleBanner');
+  const state=datasetScheduleState(meta,nowValue);
+  if(!el) return state;
+  if(!state.stale){ el.style.display='none'; el.textContent=''; return state; }
+  el.textContent='PR/PO figures may be stale. Last refreshed '+fmtDubai(state.generatedAt)+'; the latest scheduled refresh was '+fmtDubai(state.expectedAt)+'.';
+  el.style.display='block';
+  return state;
+}
 
 async function enterApp(){
   dismissSplash();
@@ -619,7 +652,7 @@ async function fetchPrpoDataset(force){
     const token = await getPrpoToken();
     if(!token) throw new Error('Microsoft session did not return a PR/PO data token.');
     // Browser refreshes always read the durable published revision. Scheduled proxy jobs own rebuilds.
-    const url = PRPO_DATASET_URL + '?refresh=0';
+    const url = PRPO_DATASET_URL + '?view=dashboard&refresh=0';
     const r = await fetch(url, { cache:'no-store', headers:{ Accept:'application/json', Authorization:'Bearer '+token } });
     if(!r.ok){
       let detail = '';
@@ -634,6 +667,22 @@ async function fetchPrpoDataset(force){
   return prpoDatasetPromise;
 }
 
+async function fetchPrpoFullDataset(){
+  if(prpoFullDatasetCache && (Date.now()-prpoFullDatasetCache.at) < CACHE_TTL_MS) return prpoFullDatasetCache.data;
+  if(prpoFullDatasetPromise) return prpoFullDatasetPromise;
+  prpoFullDatasetPromise = (async function(){
+    const token = await getPrpoToken();
+    if(!token) throw new Error('Microsoft session did not return a PR/PO data token.');
+    const r = await fetch(PRPO_DATASET_URL+'?view=full&refresh=0', { cache:'no-store', headers:{ Accept:'application/json', Authorization:'Bearer '+token } });
+    if(!r.ok) throw new Error('PR/PO detail source returned '+r.status);
+    const data = await r.json();
+    if(!data || !data.pr || !Array.isArray(data.pr.rows)) throw new Error('PR/PO detail source returned an invalid dataset.');
+    prpoFullDatasetCache = { at:Date.now(), data:data };
+    return data;
+  })().finally(()=>{ prpoFullDatasetPromise=null; });
+  return prpoFullDatasetPromise;
+}
+
 function pickField(row, names){
   for(const name of names){ if(row && row[name]!=null && String(row[name]).trim()!=='') return row[name]; }
   return '';
@@ -641,29 +690,41 @@ function pickField(row, names){
 
 function normalizePrRow(row){
   return {
-    purchaseRequisition: pickField(row, ['Purchase requisition','Purchase requisition number','Requisition number']),
-    quotationReference: pickField(row, ['Quotation reference','Quotation Reference','IFAHR quotation reference']),
+    purchaseRequisition: pickField(row, ['purchaseRequisition','Purchase requisition','Purchase requisition number','Requisition number']),
+    quotationReference: pickField(row, ['quotationReference','Quotation reference','Quotation Reference','IFAHR quotation reference']),
     name: pickField(row, ['Name','Requisition name','Description']),
     description: pickField(row, ['Description','Name','Requisition name']),
     createdDate: pickField(row, ['Created date','Created date and time','PR created date']),
-    submittedDate: pickField(row, ['Submitted date','Submitted date and time']),
+    createdDateTime: pickField(row, ['Created date and time','PR created date and time','createdDateTime']),
+    submittedDate: pickField(row, ['submittedDate','Submitted date','Submitted date and time']),
     status: pickField(row, ['Status','Requisition status']),
-    department: pickField(row, ['Department']),
-    projectId: pickField(row, ['Location','Project','Project ID']),
-    ledgerDimensionRaw: pickField(row, ['Ledger dimension','Financial dimension','Default ledger dimension']),
-    stepName: pickField(row, ['Step name','Live stage']),
-    stepDate: pickField(row, ['Step date and time','Stage event date and time']),
-    authorisedGateNumber: pickField(row, ['Authorised gate number','Capture gate number']),
-    authorisedGateName: pickField(row, ['Authorised gate name','Capture gate name']),
+    department: pickField(row, ['department','Department']),
+    projectId: pickField(row, ['projectId','Location','Project','Project ID']),
+    ledgerDimensionRaw: pickField(row, ['ledgerDimensionRaw','Ledger dimension','Financial dimension','Default ledger dimension']),
+    stepName: pickField(row, ['stepName','Step name','Live stage']),
+    stepDate: pickField(row, ['stepDate','Step date and time','Stage event date and time']),
+    authorisedGateNumber: pickField(row, ['authorisedGateNumber','Authorised gate number','Capture gate number']),
+    authorisedGateName: pickField(row, ['authorisedGateName','Authorised gate name','Capture gate name']),
     authorisedSource: pickField(row, ['Authority source'])
   };
 }
 
-function normalizePrRows(rows){
-  return (rows||[]).map(normalizePrRow).filter(p=>p.purchaseRequisition);
+function normalizePrRows(rows, fields){
+  return (rows||[]).map(row=>{
+    if(!Array.isArray(row)) return row;
+    const out={}; (fields||[]).forEach((field,index)=>{ out[field]=row[index]; }); return out;
+  }).map(normalizePrRow).filter(p=>p.purchaseRequisition);
+}
+async function detailedPrRows(rows){
+  try{
+    const full=await fetchPrpoFullDataset();
+    const byNo={}; normalizePrRows(full.pr.rows,full.pr.fields).forEach(p=>{ byNo[p.purchaseRequisition]=p; });
+    return (rows||[]).map(p=>Object.assign({},p,byNo[p.purchaseRequisition]||{}));
+  }catch(e){ return rows||[]; }
 }
 
 function isCpr(p){ return String(p && p.purchaseRequisition || '').toUpperCase().startsWith('CPR'); }
+function prCreatedAt(p){ return p && (p.createdDateTime || p.createdDate || p.submittedDate); }
 function isRfqGatePr(p){
   const gate = String(p && p.authorisedGateNumber || '').trim();
   const gateName = String(p && p.authorisedGateName || '').trim();
@@ -674,7 +735,7 @@ function isRfqGatePr(p){
 }
 function rfqElapsedMs(p){
   const end = p && p.stepDate;
-  const start = p && (p.createdDate || p.submittedDate);
+  const start = prCreatedAt(p);
   return durMs(start, end);
 }
 function rfqSourceRows(prs){
@@ -758,9 +819,9 @@ async function fetchDataverseSources(fromISO, toISO){
       + "&$filter="+encodeURIComponent(rng)), []),
     readSource('workorders', 'Work orders', 'work', () => dvGet("msdyn_workorders?$select=msdyn_name,ssg_quotenumber,msdyn_systemstatus,createdon,_ssg_department_value"
       + "&$filter="+encodeURIComponent("_ssg_division_value eq "+CANDOO_DIVISION+" and "+rng)), []),
-    readSource('bookings', 'Bookings', 'work', () => dvGet("bookableresourcebookings?$select=ssg_bookingnumber,ssg_plannedstartdate,starttime,endtime,createdon,_msdyn_workorder_value"
-      + "&$expand=msdyn_workorder($select=ssg_quotenumber,_ssg_division_value)"
-      + "&$filter="+encodeURIComponent("msdyn_workorder/_ssg_division_value eq "+CANDOO_DIVISION+" and "+rng)), [])
+    readSource('bookings', 'Bookings', 'work', () => dvGet("bookableresourcebookings?$select=ssg_plannedstartdate,endtime,createdon"
+      + "&$expand=msdyn_workorder($select=ssg_quotenumber)"
+      + "&$filter="+encodeURIComponent("msdyn_workorder/_ssg_division_value eq "+CANDOO_DIVISION+" and msdyn_workorder/ssg_quotenumber ne null and "+rng)), [])
   ]);
   return { quotesRes, emailsRes, approvalsRes, wosRes, bookingsRes };
 }
@@ -778,7 +839,7 @@ function joinSources(sourceSet, prpoRes, prpoPending){
   const bookings = bookingsRes.value || [];
   const prpoDataset = prpoRes && prpoRes.value;
   const sourceIssues = mergeSourceIssues([quotesRes.issue, emailsRes.issue, approvalsRes.issue, wosRes.issue, bookingsRes.issue, prpoRes && prpoRes.issue].filter(Boolean));
-  const prRows = normalizePrRows(prpoDataset && prpoDataset.pr ? prpoDataset.pr.rows : []).filter(isCpr);
+  const prRows = normalizePrRows(prpoDataset && prpoDataset.pr ? prpoDataset.pr.rows : [], prpoDataset && prpoDataset.pr ? prpoDataset.pr.fields : null).filter(isCpr);
   const readUtc = new Date().toISOString();
 
   const quoteByGuid = {}; quotes.forEach(q=>{ if(q.quoteid) quoteByGuid[q.quoteid.toLowerCase()] = q.quotenumber; });
@@ -807,7 +868,7 @@ function joinSources(sourceSet, prpoRes, prpoPending){
     const opp = q.opportunityid || {};
     const wo = woByQ[qn], bk = bookByQ[qn], pr = prByQ[qn], appr = apprByQ[qn] || [];
     const oppCreated = opp.createdon || '';
-    const prCreated  = pr ? pr.createdDate : '';
+    const prCreated  = prCreatedAt(pr) || '';
     const rfqGate    = pr && isRfqGatePr(pr) ? pr : null;
     const rfqSent    = rfqGate ? rfqGate.stepDate : '';
     const woCreated  = wo ? wo.createdon : '';
@@ -854,6 +915,7 @@ function joinSources(sourceSet, prpoRes, prpoPending){
     const ageStart = ms(oppCreated);
     const ageEnd = (finalDone && endJob) ? ms(endJob) : Date.now();
     const ageMs = ageStart!=null ? Math.max(0, ageEnd - ageStart) : null;
+    const draftingClockInvalid = ms(prCreated)!=null && ms(oppCreated)!=null && ms(prCreated)<ms(oppCreated);
     return {
       quoteNo: qn, quoteId: q.quoteid, createdDateTime: oppCreated, quoteType: quoteType,
       drafting:  { val: dur(oppCreated, draftEnd), ms: durMs(oppCreated, draftEnd), a:oppCreated, b:draftEnd },
@@ -870,6 +932,7 @@ function joinSources(sourceSet, prpoRes, prpoPending){
       _name: q.name||'', _prNo: pr?pr.purchaseRequisition:'', _prLoc: pr?(prProject(pr)||pr.location||''):'',
       project: (q['_ssg_communityproject_value'+F]||'').trim(), /* project = quote's own Community Project column (NOT PR-derived) */
       _woName: wo?wo.msdyn_name:'', _quoteCreated:q.createdon,
+      _draftingClockInvalid: draftingClockInvalid,
       _endJob: endJob, _finalDone: finalDone, _prpoPending:!!prpoPending
     };
   });
@@ -879,10 +942,10 @@ function joinSources(sourceSet, prpoRes, prpoPending){
     approvals.map(a=>a.createdon),
     wos.map(w=>w.createdon),
     bookings.map(b=>b.createdon),
-    prRows.map(p=>p.createdDate)
+    prRows.map(prCreatedAt)
   ), readUtc);
   return { rows, prRows, emailByQ,
-    prpoMeta: prpoDataset ? { revision: prpoDataset.revision, generatedAt: prpoDataset.generatedAt, sourceState: prpoDataset.sourceState, freshness: prpoDataset.freshness || null, exportAuthority: prpoDataset.exportAuthority || null } : (prpoRes && prpoRes.issue ? { sourceState:'unavailable', error:prpoRes.issue } : null),
+    prpoMeta: prpoDataset ? { revision: prpoDataset.revision, generatedAt: prpoDataset.generatedAt, sourceState: prpoDataset.sourceState, freshness: prpoDataset.freshness || null, exportAuthority: prpoDataset.exportAuthority || null, refreshPolicy: prpoDataset.refreshPolicy || null } : (prpoRes && prpoRes.issue ? { sourceState:'unavailable', error:prpoRes.issue } : null),
     newestDataUtc: freshness.newestUtc, readUtc, futureIgnored: freshness.futureIgnored,
     sourceIssues, prpoPending:!!prpoPending,
     counts: { quotes: quotes.length, wo: Object.keys(woByQ).length, rfqGate: rfqSourceRows(prRows).length, appr: approvals.length, pr: prRows.length } };
@@ -970,6 +1033,7 @@ async function qpCacheLoad(){
   SOURCE_ISSUES=c.SOURCE_ISSUES||[]; DATA_FUTURE_IGNORED=c.DATA_FUTURE_IGNORED||null;
   DATA_NEWEST_UTC=c.DATA_NEWEST_UTC||null; DATA_READ_UTC=c.DATA_READ_UTC||null;
   if(DATA_NEWEST_UTC || DATA_READ_UTC) updateFreshnessStamps(DATA_NEWEST_UTC, DATA_READ_UTC, DATA_FUTURE_IGNORED);
+  updateDatasetStaleBanner(PRPO_META);
   if(c.QT){ QUOTE_TYPE_FIELD=c.QT; QT_DETECTED=true; }
   return true;
 }
@@ -1006,6 +1070,7 @@ function applyRefreshResults(tableRes, trendRes, tableCoversTrend, prpoLoading){
   DATA_READ_UTC = latestDate([tableRes.readUtc, trendRes.readUtc]) || new Date().toISOString();
   DATA_FUTURE_IGNORED = tableCoversTrend ? (tableRes.futureIgnored || null) : mergeFutureIgnored(tableRes.futureIgnored, trendRes.futureIgnored);
   updateFreshnessStamps(DATA_NEWEST_UTC, DATA_READ_UTC, DATA_FUTURE_IGNORED);
+  updateDatasetStaleBanner(PRPO_META);
   populateDepts();
   populateProjects();
   render(); renderKpis();
@@ -1543,12 +1608,13 @@ function currentPRs(includeDateFilter){
   DATA.concat(TREND_DATA).forEach(r=>{ if(r.quoteNo && r.dept) deptByQuote[r.quoteNo]=r.dept; });
   let prs = PR_ROWS.filter(isCpr);
   if(includeDateFilter !== false){
-    prs = prs.filter(p=>{ const t=ms(p.createdDate); if(t==null) return false;
+    prs = prs.filter(p=>{ const t=ms(prCreatedAt(p)); if(t==null) return false;
       if(fromMs!=null && t<fromMs) return false; if(toMs!=null && t>toMs) return false; return true; });
   }
   if(dept){ prs = prs.filter(p=> deptByQuote[p.quotationReference]===dept || (p.department||'')===dept ); }
   return prs;
 }
+function draftingClockExclusions(rows){ return (rows||[]).filter(r=>r && r._draftingClockInvalid).length; }
 // classify each CPR PR (shared by the cards and the drill-through)
 function rfqRecs(){
   return rfqSourceRows(currentPRs()).map(p=>{
@@ -1592,6 +1658,10 @@ function renderProc(){
   const pct     = n => total ? Math.round(n/total*100) : 0;
   const medMs = median(measured.map(r=>r.rfqMs));
   const denominatorLabel = 'Percent denominator: total CPR PRs at gate 0.05 ('+total+').';
+  const draftingExcluded = draftingClockExclusions(DATA);
+  const draftingClockText = draftingExcluded
+    ? draftingExcluded+' quote row'+(draftingExcluded===1?'':'s')+' could not be measured because the recorded requisition creation time is earlier than the quote creation time.'
+    : '0 quote rows are excluded because of a requisition creation time earlier than the quote creation time.';
 
   // donut ring: r=15.915 makes the circumference exactly 100, so dasharray = percentage
   const donut=(p)=>{ p=Math.max(0,Math.min(100,p));
@@ -1632,6 +1702,7 @@ function renderProc(){
       '<div class="procHead">Procurement · RFQ Performance'
     + '<small>· PR created → inquiry sent to suppliers · 6h target under review</small></div>'
     + '<div class="source-note"><strong>Counting limitation:</strong> requisitions currently waiting at “inquiry sent to suppliers” are counted; items that have already moved past this step are not counted. Source: PR/PO authorised gate 0.05.</div>'
+    + '<div class="source-note"><strong>Drafting measurement check:</strong> '+escapeHtml(draftingClockText)+'</div>'
     + '<div class="source-note"><strong>RFQ percentages:</strong> '+escapeHtml(denominatorLabel)+' The 6h target percentage is hidden while the benchmark is under review.</div>'
     + '<div class="cardrow">'
     + (noSource ? noSourceCard : totalCard + medianCard + targetCard + statCard('#E8A33D','⏱️','Over 6h','over6',over6.length,avg(over6.map(r=>r.rfqMs))))
@@ -1655,16 +1726,17 @@ function openDrill(title, cols, rows){
   document.getElementById('drillModal').classList.add('show');
 }
 // Drill a trend bucket for a given week: lists every quote that HIT that stage, with its timing.
-function drillBucket(k, w){
+async function drillBucket(k, w){
   const wb = WEEK_BOUNDS.length ? WEEK_BOUNDS : weekBoundaries();
   const m = TREND_METRICS.find(x=>x.k===k) || (k==='est' ? {label:'Estimation Approval'} : {label:k});
   const title = m.label+' · '+fmtRange(wb[w]);
   const qtype = r => r.quoteType ? tintTag(r.quoteType, quoteTypeColor(r.quoteType)) : '—';
   const topic = r => '<span class="drill-topic" title="'+escapeHtml(r._name||'')+'">'+escapeHtml(r._name||'—')+'</span>';
   if(k==='rfq'){
-    const list = rfqBucketRows(wb[w]).map(p=>({p, hit:rfqElapsedMs(p)})).filter(x=>x.hit!=null).sort((a,b)=>b.hit-a.hit);
+    const detailed = await detailedPrRows(rfqBucketRows(wb[w]));
+    const list = detailed.map(p=>({p, hit:rfqElapsedMs(p)})).filter(x=>x.hit!=null).sort((a,b)=>b.hit-a.hit);
     openDrill(title, ['PR No','PR Name','Project','Quote No','PR Created','Inquiry Sent','Duration'],
-      list.map(x=>[ escapeHtml(x.p.purchaseRequisition||'—'), escapeHtml(x.p.name||x.p.description||'—'), escapeHtml(prProject(x.p)||'—'), qlinkNo(x.p.quotationReference), fmt(x.p.createdDate)||'—', fmt(x.p.stepDate)||'—', '<b>'+fmtDurMs(x.hit)+'</b>' ]));
+      list.map(x=>[ escapeHtml(x.p.purchaseRequisition||'—'), escapeHtml(x.p.name||x.p.description||'—'), escapeHtml(prProject(x.p)||'—'), qlinkNo(x.p.quotationReference), fmt(prCreatedAt(x.p))||'—', fmt(x.p.stepDate)||'—', '<b>'+fmtDurMs(x.hit)+'</b>' ]));
     return;
   }
   const rows = quoteBucketRows(activeTrendRows(), wb[w]);
@@ -1682,16 +1754,18 @@ function drillBucket(k, w){
       '<b>'+fmtDurMs(x.hit)+'</b>' ]));
 }
 // Drill an RFQ-performance card: lists the CPR PRs in that category with their RFQ timing.
-function drillRfq(cat){
+async function drillRfq(cat){
   const recs = rfqRecs();
   let list = recs, label = 'Total RFQ';
   if(cat==='under6'){ list = recs.filter(r=>r.rfqMs!=null && r.rfqMs<=RFQ_THRESHOLD_MS); label='Within 6h target'; }
   else if(cat==='over6'){ list = recs.filter(r=>r.rfqMs!=null && r.rfqMs>RFQ_THRESHOLD_MS); label='Over 6h'; }
   else if(cat==='median'){ label='Median elapsed source rows'; }
   list = list.slice().sort((a,b)=> ((b.rfqMs)||0) - ((a.rfqMs)||0));
+  const detailed = await detailedPrRows(list.map(x=>x.p));
+  list = list.map((x,index)=>Object.assign({},x,{p:detailed[index]}));
   openDrill(label+' — PR created → inquiry sent', ['PR No','PR Name','Project','Quote No','PR Created','Inquiry Sent','Time','Gate'],
     list.map(x=>{
-      return [ escapeHtml(x.p.purchaseRequisition||'—'), escapeHtml(x.p.name||x.p.description||x.p.title||'—'), escapeHtml(prProject(x.p)||'—'), qlinkNo(x.qn), fmt(x.p.createdDate)||'—',
+      return [ escapeHtml(x.p.purchaseRequisition||'—'), escapeHtml(x.p.name||x.p.description||x.p.title||'—'), escapeHtml(prProject(x.p)||'—'), qlinkNo(x.qn), fmt(prCreatedAt(x.p))||'—',
         fmt(x.inquiryT)||'<span class="drill-ongoing">not recorded</span>',
         '<b>'+(x.rfqMs!=null ? fmtDurMs(x.rfqMs) : '—')+'</b>', tintTag((x.p.authorisedGateNumber||'0.05')+' '+(x.p.authorisedGateName||'Inquiry Sent to Suppliers'),'#145A95') ];
     }));
@@ -1729,7 +1803,7 @@ function dismissSplash(){
 }
 
 /* ============================ BOOT ============================ */
-window.__QP_TEST__ = { weekBoundaries, dubaiWeekStartUtc, freshnessState, sourceEmptyMessage, rfqSourceRows, rfqElapsedMs, median, recordFreshness, mergeFutureIgnored, futureIgnoredText, applyTheme, toggleTheme, sourceFailure, mergeSourceIssues, sourceIssueMessage, fetchDataverseSources, fetchPrpoSource, joinSources, fetchAndJoin };
+window.__QP_TEST__ = { weekBoundaries, dubaiWeekStartUtc, freshnessState, datasetScheduleState, updateDatasetStaleBanner, sourceEmptyMessage, normalizePrRows, rfqSourceRows, rfqElapsedMs, draftingClockExclusions, median, recordFreshness, mergeFutureIgnored, futureIgnoredText, applyTheme, toggleTheme, sourceFailure, mergeSourceIssues, sourceIssueMessage, fetchDataverseSources, fetchPrpoSource, joinSources, fetchAndJoin };
 initTheme();
 initSplash();
 (async function(){
