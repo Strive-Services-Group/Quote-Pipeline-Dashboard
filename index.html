@@ -118,6 +118,8 @@
   .procHead::after{content:'';flex:1;height:1px;background:var(--line);}
   .tcard{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:0;min-width:0;box-shadow:var(--shadow);border-top:4px solid var(--tc,var(--ocean));display:flex;flex-direction:column;transition:.16s;overflow:hidden;cursor:pointer;}
   .tcard:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);}
+  .tcard.static{cursor:default;}
+  .tcard.static:hover{box-shadow:var(--shadow);transform:none;}
   .tcard-top{display:flex;align-items:center;gap:9px;padding:2px 15px 1px;}
   .tcard-ic{width:24px;height:24px;flex:0 0 24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;background:color-mix(in srgb,var(--tc,var(--ocean)) 13%,#fff);}
   .tcard .lbl{font-size:12.5px;color:var(--tc,var(--slate));text-transform:uppercase;letter-spacing:.6px;font-weight:800;}
@@ -1367,6 +1369,12 @@ function syncStickyTops(){
 window.addEventListener('resize', function(){ try{ syncStickyTops(); }catch(e){} });
 
 const RFQ_THRESHOLD_MS = 6*36e5;
+const RFQ_TARGET_POLICY = Object.freeze({
+  department:'Home Maintenance Services',
+  definition:'regular or recurring work with an established item and price',
+  markerAvailable:false,
+  markerReason:'The source does not identify regular or recurring work with an established item and price.'
+});
 function avg(a){ return a.length ? a.reduce((s,x)=>s+x,0)/a.length : null; }
 function metricMs(r,k){ if(k==='ageing') return r.ageingMs!=null ? r.ageingMs : null; return r[k] ? r[k].ms : null; }
 // A quote "hits" a stage the moment it has a START date for it. If there is no END yet,
@@ -1623,25 +1631,60 @@ function currentPRs(includeDateFilter){
   return prs;
 }
 function draftingClockExclusions(rows){ return (rows||[]).filter(r=>r && r._draftingClockInvalid).length; }
-// classify each CPR PR (shared by the cards and the drill-through)
-function rfqRecs(){
-  return rfqSourceRows(currentPRs()).map(p=>{
+function stageHasProgress(stage){
+  return !!(stage && (stage.status || stage.start || stage.end));
+}
+function estimationHasProgress(est){
+  return !!(est && (est.any || ['proc','ops','other'].some(k=>stageHasProgress(est[k]))));
+}
+function quoteProgressedPastRfq(row){
+  return !!(row && (
+    estimationHasProgress(row.est)
+    || stageHasProgress(row.internal)
+    || stageHasProgress(row.customer)
+    || (row.scheduling && (row.scheduling.a || row.scheduling.b))
+    || (row.workExec && (row.workExec.a || row.workExec.b))
+    || row._woName
+  ));
+}
+function rfqWaitingSplit(prs, quoteRows){
+  const quoteByNumber = {};
+  (quoteRows||[]).forEach(row=>{
+    const qn = row && row.quoteNo;
+    if(!qn) return;
+    if(!quoteByNumber[qn] || quoteProgressedPastRfq(row)) quoteByNumber[qn] = row;
+  });
+  const candidates = rfqSourceRows(prs);
+  const waiting = [], excluded = [];
+  candidates.forEach(p=>{
+    const entry = {p, quote:quoteByNumber[p.quotationReference]||null};
+    (quoteProgressedPastRfq(entry.quote) ? excluded : waiting).push(entry);
+  });
+  return {candidates, waiting, excluded};
+}
+function rfqRecord(entry){
+    const p = entry.p;
     const qn = p.quotationReference;
     const raw = rfqElapsedMs(p);
     const rfqMs = raw!=null ? Math.max(0, raw) : null;
-    return { p, qn, inquiryT:p.stepDate, rfqMs, done:rfqMs!=null, missingClock:rfqMs==null };
-  });
+    return { p, qn, quote:entry.quote, inquiryT:p.stepDate, rfqMs, done:rfqMs!=null, missingClock:rfqMs==null };
+}
+// Classify each still-waiting CPR PR once for both the cards and drill-through.
+function rfqRecs(prs, quoteRows){
+  const sourcePrs = prs || currentPRs();
+  const sourceQuotes = quoteRows || DATA.concat(TREND_DATA);
+  return rfqWaitingSplit(sourcePrs, sourceQuotes).waiting.map(rfqRecord);
 }
 function renderProc(){
   if(PRPO_LOADING){
     document.getElementById('procKpis').innerHTML =
-        '<div class="procHead">Procurement · RFQ Performance<small>· PR created → inquiry sent · 6h target under review</small></div>'
+        '<div class="procHead">Procurement · RFQ Waiting Time<small>· PR created → inquiry sent · all departments</small></div>'
       + '<div class="source-note"><strong>PR/PO figures still loading</strong></div>'
       + '<div class="cardrow">'
-      + loadingBucketCard('Total RFQ','CPR PRs at gate 0.05','📄','#145A95')
+      + loadingBucketCard('Waiting RFQs','CPR PRs still at RFQ','📄','#145A95')
       + loadingBucketCard('Median elapsed','PR created → inquiry sent','🕐','#145A95')
-      + loadingBucketCard('6h target','target under review','🎯','#C0392B')
-      + loadingBucketCard('Over 6h','avg elapsed','⏱️','#E8A33D')
+      + loadingBucketCard('6h eligibility','Home Maintenance Services only','🎯','#E8A33D')
+      + loadingBucketCard('Longest elapsed','all waiting RFQs','⏱️','#618FB4')
       + '</div>';
     return;
   }
@@ -1649,23 +1692,23 @@ function renderProc(){
   if(rfqIssue){
     const msg = sourceIssueMessage(rfqIssue);
     document.getElementById('procKpis').innerHTML =
-        '<div class="procHead">Procurement · RFQ Performance'
-      + '<small>· PR created → inquiry sent to suppliers · 6h target under review</small></div>'
+        '<div class="procHead">Procurement · RFQ Waiting Time'
+      + '<small>· PR created → inquiry sent to suppliers · all departments</small></div>'
       + '<div class="source-note"><strong>RFQ source warning:</strong> '+escapeHtml(msg)+'</div>'
       + '<div class="cardrow">'
       + bucketCardNoSource({c:'#C0392B', icon:'✉️', label:'RFQ source not read', desc:'authorised gate 0.05'}, msg)
       + '</div>';
     return;
   }
-  const recs = rfqRecs();
+  const split = rfqWaitingSplit(currentPRs(), DATA.concat(TREND_DATA));
+  const recs = split.waiting.map(rfqRecord);
   const measured = recs.filter(r=>r.rfqMs!=null);
-  const under6  = measured.filter(r=> r.rfqMs<=RFQ_THRESHOLD_MS);
-  const over6   = measured.filter(r=> r.rfqMs>RFQ_THRESHOLD_MS);
-  const missingClock = recs.filter(r=>r.rfqMs==null);
   const total   = recs.length;
   const pct     = n => total ? Math.round(n/total*100) : 0;
   const medMs = median(measured.map(r=>r.rfqMs));
-  const denominatorLabel = 'Percent denominator: total CPR PRs at gate 0.05 ('+total+').';
+  const avgMs = avg(measured.map(r=>r.rfqMs));
+  const longestMs = measured.length ? Math.max.apply(null,measured.map(r=>r.rfqMs)) : null;
+  const excludedCount = split.excluded.length;
   const draftingExcluded = draftingClockExclusions(DATA);
   const draftingClockText = draftingExcluded
     ? draftingExcluded+' quote row'+(draftingExcluded===1?'':'s')+' could not be measured because the recorded requisition creation time is earlier than the quote creation time.'
@@ -1679,41 +1722,34 @@ function renderProc(){
   const shell=(color,ic,lbl,cat,inner)=>
     '<div class="tcard" style="--tc:'+color+'" title="click to drill through" onclick="drillRfq(\''+cat+'\')">'
     + '<div class="tcard-top"><span class="tcard-ic">'+ic+'</span><span class="lbl">'+lbl+'</span></div>'+inner+'</div>';
-  const statCard=(color,ic,lbl,cat,count,avgMs)=> shell(color,ic,lbl,cat,
-      '<div class="tcard-body2"><span class="tbig2">'+count+'</span>'
-    + '<span class="tavg">🕐 '+(avgMs!=null?fmtDurMs(avgMs):'—')+' <span class="tsub2">avg elapsed · of total gate rows</span></span>'
-    + donut(pct(count)) + '</div>');
-  const noSource = total === 0;
+  const staticShell=(color,ic,lbl,inner)=>
+    '<div class="tcard static" style="--tc:'+color+'">'
+    + '<div class="tcard-top"><span class="tcard-ic">'+ic+'</span><span class="lbl">'+lbl+'</span></div>'+inner+'</div>';
+  const noSource = split.candidates.length === 0;
   const noSourceCard = bucketCardNoSource({c:'#C0392B', icon:'✉️', label:'RFQ source', desc:'authorised gate 0.05'}, sourceEmptyMessage('RFQ gate 0.05'));
-  const totalCard = shell('#145A95','📄','Total RFQ','total',
-      '<div class="tcard-body2"><div><div class="tbig2">'+total+'</div><div class="tsub2">CPR PRs at gate 0.05</div></div>'
-    + '<div class="tdist">'
-    + '<div class="distbar">'
-    + '<i style="width:'+pct(under6.length)+'%;background:#2E8B57" title="Completed &lt; 6h"></i>'
-    + '<i style="width:'+pct(over6.length)+'%;background:#E8A33D" title="Completed &gt; 6h"></i>'
-    + '<i style="width:'+pct(missingClock.length)+'%;background:#CBD5E1" title="Missing clock"></i>'
-    + '</div>'
-    + '<div class="dleg">'
-    + '<span><i style="background:#2E8B57"></i><b>'+under6.length+'</b> within 6h</span>'
-    + '<span><i style="background:#E8A33D"></i><b>'+over6.length+'</b> over 6h</span>'
-    + (missingClock.length ? '<span><i style="background:#CBD5E1"></i><b>'+missingClock.length+'</b> no clock</span>' : '')
-    + '</div></div></div>');
+  const totalCard = shell('#145A95','📄','Waiting RFQs','total',
+      '<div class="tcard-body2"><div><div class="tbig2">'+total+'</div><div class="tsub2">CPR PRs still waiting at RFQ</div></div>'
+    + '<span class="tavg"><span class="tsub2">'+excludedCount+' moved-on gate row'+(excludedCount===1?'':'s')+' excluded</span></span></div>');
   const medianCard = shell('#145A95','🕐','Median elapsed','median',
       '<div class="tcard-body2"><span class="tbig2">'+(medMs!=null?fmtDurMs(medMs):'—')+'</span>'
     + '<span class="tavg"><span class="tsub2">'+measured.length+' of '+total+' rows measured</span></span>'
     + donut(pct(measured.length)) + '</div>');
-  const targetCard = shell('#C0392B','🎯','6h target','under6',
-      '<div class="tcard-body2"><span class="pendchip" title="Benchmark is being re-agreed with Procurement">target under review</span>'
-    + '<span class="tavg"><span class="tsub2">percentage suppressed until the target is agreed</span></span></div>');
+  const targetCard = staticShell('#E8A33D','🎯','6h eligibility',
+      '<div class="tcard-body2"><span class="pendchip">not identifiable</span>'
+    + '<span class="tavg"><span class="tsub2">Home Maintenance Services only · no percentage shown</span></span></div>');
+  const longestCard = shell('#618FB4','⏱️','Longest elapsed','longest',
+      '<div class="tcard-body2"><span class="tbig2">'+(longestMs!=null?fmtDurMs(longestMs):'—')+'</span>'
+    + '<span class="tavg">🕐 '+(avgMs!=null?fmtDurMs(avgMs):'—')+' <span class="tsub2">average · all waiting RFQs</span></span></div>');
 
   document.getElementById('procKpis').innerHTML =
-      '<div class="procHead">Procurement · RFQ Performance'
-    + '<small>· PR created → inquiry sent to suppliers · 6h target under review</small></div>'
-    + '<div class="source-note"><strong>Counting limitation:</strong> requisitions currently waiting at “inquiry sent to suppliers” are counted; items that have already moved past this step are not counted. Source: PR/PO authorised gate 0.05.</div>'
+      '<div class="procHead">Procurement · RFQ Waiting Time'
+    + '<small>· PR created → inquiry sent to suppliers · all departments</small></div>'
+    + '<div class="source-note"><strong>Waiting population:</strong> requisitions at authorised gate 0.05 are counted unless downstream CRM evidence shows the quote has moved past RFQ.</div>'
+    + '<div class="source-note"><strong>Progression check:</strong> '+excludedCount+' gate row'+(excludedCount===1?' is':'s are')+' excluded because downstream CRM evidence shows '+(excludedCount===1?'the quote has':'the quotes have')+' already moved past RFQ.</div>'
     + '<div class="source-note"><strong>Drafting measurement check:</strong> '+escapeHtml(draftingClockText)+'</div>'
-    + '<div class="source-note"><strong>RFQ percentages:</strong> '+escapeHtml(denominatorLabel)+' The 6h target percentage is hidden while the benchmark is under review.</div>'
+    + '<div class="source-note"><strong>6-hour target:</strong> applies only to '+escapeHtml(RFQ_TARGET_POLICY.department)+' '+escapeHtml(RFQ_TARGET_POLICY.definition)+'. '+escapeHtml(RFQ_TARGET_POLICY.markerReason)+' No row is assessed against the target and the percentage is suppressed.</div>'
     + '<div class="cardrow">'
-    + (noSource ? noSourceCard : totalCard + medianCard + targetCard + statCard('#E8A33D','⏱️','Over 6h','over6',over6.length,avg(over6.map(r=>r.rfqMs))))
+    + (noSource ? noSourceCard : totalCard + medianCard + targetCard + longestCard)
     + '</div>';
 }
 
@@ -1764,10 +1800,9 @@ async function drillBucket(k, w){
 // Drill an RFQ-performance card: lists the CPR PRs in that category with their RFQ timing.
 async function drillRfq(cat){
   const recs = rfqRecs();
-  let list = recs, label = 'Total RFQ';
-  if(cat==='under6'){ list = recs.filter(r=>r.rfqMs!=null && r.rfqMs<=RFQ_THRESHOLD_MS); label='Within 6h target'; }
-  else if(cat==='over6'){ list = recs.filter(r=>r.rfqMs!=null && r.rfqMs>RFQ_THRESHOLD_MS); label='Over 6h'; }
-  else if(cat==='median'){ label='Median elapsed source rows'; }
+  let list = recs, label = 'Waiting RFQs';
+  if(cat==='median'){ label='Waiting RFQs · median source rows'; }
+  else if(cat==='longest'){ label='Waiting RFQs · longest first'; }
   list = list.slice().sort((a,b)=> ((b.rfqMs)||0) - ((a.rfqMs)||0));
   const detailed = await detailedPrRows(list.map(x=>x.p));
   list = list.map((x,index)=>Object.assign({},x,{p:detailed[index]}));
@@ -1811,7 +1846,7 @@ function dismissSplash(){
 }
 
 /* ============================ BOOT ============================ */
-window.__QP_TEST__ = { weekBoundaries, dubaiWeekStartUtc, freshnessState, datasetScheduleState, staleRefreshLabel, updateDatasetStaleBanner, sourceEmptyMessage, normalizePrRows, rfqSourceRows, rfqElapsedMs, draftingClockExclusions, median, recordFreshness, mergeFutureIgnored, futureIgnoredText, applyTheme, toggleTheme, sourceFailure, mergeSourceIssues, sourceIssueMessage, fetchDataverseSources, fetchPrpoSource, joinSources, fetchAndJoin };
+window.__QP_TEST__ = { weekBoundaries, dubaiWeekStartUtc, freshnessState, datasetScheduleState, staleRefreshLabel, updateDatasetStaleBanner, sourceEmptyMessage, normalizePrRows, rfqSourceRows, rfqElapsedMs, draftingClockExclusions, stageHasProgress, estimationHasProgress, quoteProgressedPastRfq, rfqWaitingSplit, rfqRecord, RFQ_TARGET_POLICY, median, recordFreshness, mergeFutureIgnored, futureIgnoredText, applyTheme, toggleTheme, sourceFailure, mergeSourceIssues, sourceIssueMessage, fetchDataverseSources, fetchPrpoSource, joinSources, fetchAndJoin };
 initTheme();
 initSplash();
 (async function(){

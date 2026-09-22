@@ -83,6 +83,10 @@ assert.doesNotMatch(html, /raw:\s*row/);
 assert.match(html, /indexedDB\.open\(QP_CACHE_DB,1\)/);
 assert.match(html, /if\(PRPO_LOADING\) return; \/\/ keep the last complete durable snapshot/);
 assert.match(html, /const hadCache = await qpCacheLoad\(\)/);
+assert.match(html, /Waiting population:/);
+assert.match(html, /No row is assessed against the target and the percentage is suppressed\./);
+assert.doesNotMatch(html, /percentage suppressed until the target is agreed/);
+assert.doesNotMatch(html, /Within 6h target/);
 
 const guardedFreshness = qp.recordFreshness([
   '2026-09-20T08:00:00Z',
@@ -110,6 +114,23 @@ assert.deepEqual(elapsed, [5 * 3600000, 41 * 3600000]);
 assert.equal(elapsed.filter(ms => ms <= 6 * 3600000).length, 1);
 assert.equal(qp.median(elapsed), 23 * 3600000);
 assert.equal(qp.draftingClockExclusions([{ _draftingClockInvalid: true }, { _draftingClockInvalid: false }]), 1);
+const waitingSplit = qp.rfqWaitingSplit([
+  { purchaseRequisition: 'CPR-035825', quotationReference: 'Q-44031', createdDateTime: '2026-09-19T13:50:48Z', stepDate: '2026-09-21T10:12:59Z', authorisedGateNumber: '0.05' },
+  { purchaseRequisition: 'CPR-035894', quotationReference: 'Q-44100', createdDateTime: '2026-09-22T01:55:24Z', stepDate: '2026-09-22T06:25:22Z', authorisedGateNumber: '0.05' },
+  { purchaseRequisition: 'CPR-035900', quotationReference: 'Q-44106', createdDateTime: '2026-09-22T02:00:00Z', stepDate: '2026-09-22T06:40:07Z', authorisedGateNumber: '0.05' }
+], [
+  { quoteNo: 'Q-44031', status: 'Unscheduled WorkOrder', customer: { status:'Sent for approval', start:'2026-09-22T09:28:44Z' }, scheduling: { a:'2026-09-22T12:59:22Z' }, _woName:'1697002' },
+  { quoteNo: 'Q-44100', status: 'Sent for Customer Approval', internal: { status:'Approved', start:'2026-09-22T05:55:30Z', end:'2026-09-22T06:24:45Z' }, customer: { status:'Sent for approval', start:'2026-09-22T06:25:22Z' } },
+  { quoteNo: 'Q-44106', status: 'Sent for RFQ', est: { any:false }, internal: {}, customer: {}, scheduling: {}, workExec: {} }
+]);
+assert.equal(waitingSplit.candidates.length, 3);
+assert.deepEqual(Array.from(waitingSplit.excluded, entry => entry.p.quotationReference).sort(), ['Q-44031','Q-44100']);
+assert.deepEqual(Array.from(waitingSplit.waiting, entry => entry.p.quotationReference), ['Q-44106']);
+assert.equal(qp.quoteProgressedPastRfq({ est:{ any:true } }), true);
+assert.equal(qp.quoteProgressedPastRfq({ status:'Sent for RFQ', est:{ any:false }, internal:{}, customer:{} }), false);
+assert.equal(qp.RFQ_TARGET_POLICY.department, 'Home Maintenance Services');
+assert.equal(qp.RFQ_TARGET_POLICY.markerAvailable, false);
+assert.match(qp.RFQ_TARGET_POLICY.markerReason, /does not identify regular or recurring work/);
 const compactRows = qp.normalizePrRows([['CPR-200','Q-200','2026-09-21T05:00:00Z','2026-09-21T10:00:00Z','Commercial','','','Procurement sends inquiry/RFQ to suppliers','2026-09-21T09:00:00Z','0.05','Inquiry Sent to Suppliers']],
   ['purchaseRequisition','quotationReference','createdDateTime','submittedDate','department','projectId','ledgerDimensionRaw','stepName','stepDate','authorisedGateNumber','authorisedGateName']);
 assert.equal(compactRows[0].purchaseRequisition, 'CPR-200');
@@ -186,6 +207,8 @@ async function runAsyncProof() {
     guardedFreshness,
     noSourceMessage: emptyMessage,
     realZero: { sourceRows: sourceRows.length, underSixHours: elapsed.filter(ms => ms <= 6 * 3600000).length, medianHours: qp.median(elapsed) / 3600000 },
+    waitingPopulation: { candidates: waitingSplit.candidates.length, waiting: waitingSplit.waiting.length, excludedQuoteNumbers: Array.from(waitingSplit.excluded, entry => entry.p.quotationReference) },
+    targetPolicy: qp.RFQ_TARGET_POLICY,
     progressive: { rowsReturned: progressive.rows.length, prpoPending: progressive.rows[0]._prpoPending },
     prpoFailure: { rowsReturned: joined.rows.length, issueKeys: joined.sourceIssues.map(issue => issue.key), rfqValue: joined.rows[0].rfq.val },
     theme: { persistedAfterToggle: storage.qp_theme, documentTheme: documentElement.attrs['data-theme'] }
