@@ -15,6 +15,10 @@ async function main() {
   assert.match(html, /indexedDB\.open\(QP_CACHE_DB,1\)/, 'last complete snapshot must remain in IndexedDB');
   assert.match(html, /bookableresourcebookings\?\$select=ssg_plannedstartdate,endtime,createdon/, 'bookings query is not reduced');
   assert.doesNotMatch(html, /bookableresourcebookings\?\$select=ssg_bookingnumber/, 'unused booking columns returned');
+  assert.match(html, /function rfqWaitingSplit\(/, 'RFQ waiting population must exclude quotes with downstream progress');
+  assert.match(html, /Progression check:/, 'RFQ moved-on exclusion count must remain visible');
+  assert.match(html, /No row is assessed against the target and the percentage is suppressed\./, '6-hour target must remain suppressed until an eligibility marker exists');
+  assert.doesNotMatch(html, /Within 6h target/, 'all-department waiting rows must not be shown as target performance');
 
   const healthResponses = [];
   for (let i = 0; i < 2; i += 1) {
