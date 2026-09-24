@@ -150,6 +150,11 @@
   .pendchip{display:inline-flex;align-items:center;gap:5px;background:#FDF0EE;color:#C0392B;border-radius:9px;padding:3px 9px;font-size:12px;font-weight:800;white-space:nowrap;}
   .source-note{margin:0 0 10px;padding:8px 11px;border:1px solid var(--line);border-radius:10px;background:var(--soft);color:var(--muted);font-size:12.5px;font-weight:700;line-height:1.35;}
   .source-note strong{color:var(--ink);}
+  .procHead.hms-head{margin-top:20px;}
+  #procKpis .cardrow.hms-row{grid-template-columns:repeat(2,minmax(0,1fr));}
+  @media(max-width:640px){ #procKpis .cardrow.hms-row{grid-template-columns:1fr;} }
+  .tlines{display:flex;flex-direction:column;gap:2px;flex:1 1 auto;min-width:0;font-size:12px;font-weight:700;color:var(--muted);line-height:1.3;}
+  .tlines b{color:var(--metric);}
   .source-empty{padding:12px 15px 14px;color:var(--muted);font-size:12.5px;font-weight:700;line-height:1.35;}
   .source-empty strong{display:block;color:var(--ink);font-size:13.5px;margin-bottom:4px;}
   .source-issue-chip{align-items:flex-start;text-align:left;min-width:150px;max-width:190px;background:color-mix(in srgb,#C0392B 12%,var(--card))!important;}
@@ -340,7 +345,7 @@
   <button class="hbtn theme-toggle" onclick="toggleTheme()" id="themeBtn" type="button" aria-label="Switch colour theme">Dark</button>
   <button class="hbtn" onclick="refreshAll(true)" id="refreshBtn" style="display:none">↻ Refresh</button>
   <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
-  <span class="ver">v60</span>
+  <span class="ver">v61</span>
 </header>
 <div class="dataset-stale-banner" id="datasetStaleBanner" role="status" aria-live="polite" style="display:none"></div>
 <div class="controls" id="controls" style="display:none">
@@ -1679,17 +1684,113 @@ function rfqRecs(prs, quoteRows){
   const sourceQuotes = quoteRows || DATA.concat(TREND_DATA);
   return rfqWaitingSplit(sourcePrs, sourceQuotes).waiting.map(rfqRecord);
 }
+
+// Home Maintenance requisitions skip gate 0.05: their RFQ step is 0.03 New PR Received → 0.09 Supplier Price Updated in PR.
+const HMS_DEPT = 'Home Maintenance Services';
+const HMS_GATES = Object.freeze({ received:'0.03', priced:'0.09', movedOn:'0.20' });
+function isHmsPr(p){ return String(p && p.department || '').trim() === HMS_DEPT; }
+function prGate(p){ return String(p && p.authorisedGateNumber || '').trim(); }
+// The clock starts only at the recorded creation date and time; a date-only fallback would start at midnight.
+function hmsRecord(p, endIso, nowMs){
+  const start = p.createdDateTime || '';
+  const s = ms(start), e = endIso==null ? nowMs : ms(endIso);
+  const elapsedMs = (s==null || e==null || e<s) ? null : e-s;
+  return { p, qn:p.quotationReference, start, end:endIso, elapsedMs };
+}
+function hmsStats(recs){
+  const vals = recs.map(r=>r.elapsedMs).filter(x=>x!=null).sort((a,b)=>a-b);
+  const within = vals.filter(x=>x<=RFQ_THRESHOLD_MS).length;
+  return { total:recs.length, measured:vals.length, unmeasured:recs.length-vals.length,
+    medianMs:median(vals), minMs:vals.length?vals[0]:null, maxMs:vals.length?vals[vals.length-1]:null,
+    within6h:within, over6h:vals.length-within, pct6h:vals.length?Math.round(within/vals.length*100):null };
+}
+function hmsRfqSplit(prs, allPrs, nowMs){
+  const now = nowMs!=null ? nowMs : Date.now();
+  const inScope = (prs||[]).filter(p=>isCpr(p) && isHmsPr(p));
+  const feedHms = (allPrs||[]).filter(p=>isCpr(p) && isHmsPr(p));
+  const priced = inScope.filter(p=>prGate(p)===HMS_GATES.priced).map(p=>hmsRecord(p, p.stepDate||'', now));
+  const waiting = inScope.filter(p=>prGate(p)===HMS_GATES.received).map(p=>hmsRecord(p, null, now));
+  const other = {};
+  inScope.filter(p=>![HMS_GATES.received,HMS_GATES.priced,HMS_GATES.movedOn].includes(prGate(p))).forEach(p=>{
+    const key = (prGate(p)||'no gate')+' '+(p.authorisedGateName||'');
+    other[key.trim()] = (other[key.trim()]||0)+1;
+  });
+  return { inScope:inScope.length, feedTotal:feedHms.length, priced, waiting,
+    pricedStats:hmsStats(priced), waitingStats:hmsStats(waiting),
+    movedOnFeed:feedHms.filter(p=>prGate(p)===HMS_GATES.movedOn).length,
+    movedOnInScope:inScope.filter(p=>prGate(p)===HMS_GATES.movedOn).length,
+    feedAtInquiryGate:feedHms.filter(isRfqGatePr).length, other };
+}
+function hmsHead(){
+  return '<div class="procHead hms-head">Home Maintenance · RFQ Time<small>· PR received → supplier price updated in PR</small></div>';
+}
+function renderHmsRfq(dept){
+  if(PRPO_LOADING){
+    return hmsHead() + '<div class="source-note"><strong>PR/PO figures still loading</strong></div>'
+      + '<div class="cardrow hms-row">'
+      + loadingBucketCard('Priced','PR received → supplier price','💲','#2E8B57')
+      + loadingBucketCard('Waiting for a price','PR received, not yet priced','⏳','#C0392B')
+      + '</div>';
+  }
+  const issue = sourceIssue('prpo');
+  if(issue){
+    const msg = sourceIssueMessage(issue);
+    return hmsHead() + '<div class="source-note"><strong>RFQ source warning:</strong> '+escapeHtml(msg)+'</div>'
+      + '<div class="cardrow hms-row">'+bucketCardNoSource({c:'#C0392B', icon:'✉️', label:'RFQ source not read', desc:'gates 0.03 and 0.09'}, msg)+'</div>';
+  }
+  const clockNote = '<div class="source-note"><strong>What the clock measures:</strong> The clock starts when Procurement receives the requisition and stops when the supplier price is written into it. Home Maintenance requisitions do not pass through \'inquiry sent to suppliers\', which is why they were missing from the band above. Start = requisition created date and time; stop = the time gate 0.09 Supplier Price Updated in PR was reached.</div>';
+  if(dept && dept!==HMS_DEPT){
+    return hmsHead() + clockNote
+      + '<div class="source-note"><strong>Department filter:</strong> this band covers '+escapeHtml(HMS_DEPT)+' only, so it has no rows while the filter is set to '+escapeHtml(dept)+'.</div>';
+  }
+  const s = hmsRfqSplit(currentPRs(), PR_ROWS);
+  const ps = s.pricedStats, wsx = s.waitingStats;
+  const d = v => v!=null ? fmtDurMs(v) : '—';
+  const donut=(p)=>{ p=Math.max(0,Math.min(100,p||0));
+    return '<svg class="donut" viewBox="0 0 36 36" aria-hidden="true"><circle class="bgc" cx="18" cy="18" r="15.915"/>'
+      + '<circle class="fgc" cx="18" cy="18" r="15.915" stroke-dasharray="'+p+' '+(100-p)+'" stroke-dashoffset="25"/>'
+      + '<text x="18" y="19.5">'+p+'%</text></svg>'; };
+  const card=(color,ic,lbl,cat,inner)=>
+    '<div class="tcard" style="--tc:'+color+'" title="click to drill through" onclick="drillHms(\''+cat+'\')">'
+    + '<div class="tcard-top"><span class="tcard-ic">'+ic+'</span><span class="lbl">'+lbl+'</span></div>'+inner+'</div>';
+  const unmeasured = n => n ? '<span>'+n+' without a recorded time · not measured</span>' : '';
+  const pricedCard = card('#2E8B57','💲','Priced','priced',
+      '<div class="tcard-body2"><div><div class="tbig2">'+ps.total+'</div><div class="tsub2">priced · '+ps.measured+' measured</div></div>'
+    + '<div class="tlines"><span>median <b>'+d(ps.medianMs)+'</b></span>'
+    + '<span>fastest <b>'+d(ps.minMs)+'</b> · slowest <b>'+d(ps.maxMs)+'</b></span>'
+    + '<span><b>'+ps.within6h+' of '+ps.measured+'</b> within 6 hours'+(ps.pct6h!=null?' ('+ps.pct6h+'%)':'')+'</span>'
+    + unmeasured(ps.unmeasured)+'</div>'
+    + (ps.pct6h!=null ? donut(ps.pct6h) : '') + '</div>');
+  const waitingCard = card('#C0392B','⏳','Waiting for a price','waiting',
+      '<div class="tcard-body2"><div><div class="tbig2">'+wsx.total+'</div><div class="tsub2">received, not yet priced</div></div>'
+    + '<div class="tlines"><span>median wait so far <b>'+d(wsx.medianMs)+'</b></span>'
+    + '<span>longest wait <b>'+d(wsx.maxMs)+'</b></span>'
+    + '<span><b>'+wsx.over6h+' of '+wsx.measured+'</b> over 6 hours</span>'
+    + unmeasured(wsx.unmeasured)+'</div></div>');
+  const otherKeys = Object.keys(s.other);
+  const otherText = otherKeys.length
+    ? ' Also not counted: '+otherKeys.map(k=>s.other[k]+' at '+escapeHtml(k)).join(', ')+' (neither waiting at 0.03 nor priced at 0.09).'
+    : '';
+  return hmsHead() + clockNote
+    + '<div class="source-note"><strong>6-hour target:</strong> 6-hour target applied to every Home Maintenance requisition. The system does not mark which are regular or recurring, so one-off work is included.</div>'
+    + '<div class="source-note"><strong>Not counted:</strong> Requisitions that have already moved on to an LPO are not counted — the feed carries only the current step. '
+    + s.movedOnFeed+' Home Maintenance requisition'+(s.movedOnFeed===1?' is':'s are')+' at 0.20 LPO Created in the feed ('+s.movedOnInScope+' of them created in the selected dates).'+otherText+'</div>'
+    + '<div class="source-note"><strong>Scope:</strong> '+s.inScope+' of '+s.feedTotal+' Home Maintenance requisitions in the feed were created in the selected dates.</div>'
+    + '<div class="cardrow hms-row">'+pricedCard+waitingCard+'</div>';
+}
 function renderProc(){
+  const dept = document.getElementById('deptSel').value;
+  const scopeLabel = dept ? escapeHtml(dept) : 'all departments';
   if(PRPO_LOADING){
     document.getElementById('procKpis').innerHTML =
-        '<div class="procHead">Procurement · RFQ Waiting Time<small>· PR created → inquiry sent · all departments</small></div>'
+        '<div class="procHead">Procurement · RFQ Waiting Time<small>· PR created → inquiry sent · '+scopeLabel+'</small></div>'
       + '<div class="source-note"><strong>PR/PO figures still loading</strong></div>'
       + '<div class="cardrow">'
       + loadingBucketCard('Waiting RFQs','CPR PRs still at RFQ','📄','#145A95')
       + loadingBucketCard('Median elapsed','PR created → inquiry sent','🕐','#145A95')
       + loadingBucketCard('6h eligibility','Home Maintenance Services only','🎯','#E8A33D')
       + loadingBucketCard('Longest elapsed','all waiting RFQs','⏱️','#618FB4')
-      + '</div>';
+      + '</div>' + renderHmsRfq(dept);
     return;
   }
   const rfqIssue = sourceIssue('prpo');
@@ -1697,11 +1798,11 @@ function renderProc(){
     const msg = sourceIssueMessage(rfqIssue);
     document.getElementById('procKpis').innerHTML =
         '<div class="procHead">Procurement · RFQ Waiting Time'
-      + '<small>· PR created → inquiry sent to suppliers · all departments</small></div>'
+      + '<small>· PR created → inquiry sent to suppliers · '+scopeLabel+'</small></div>'
       + '<div class="source-note"><strong>RFQ source warning:</strong> '+escapeHtml(msg)+'</div>'
       + '<div class="cardrow">'
       + bucketCardNoSource({c:'#C0392B', icon:'✉️', label:'RFQ source not read', desc:'authorised gate 0.05'}, msg)
-      + '</div>';
+      + '</div>' + renderHmsRfq(dept);
     return;
   }
   const split = rfqWaitingSplit(currentPRs(), DATA.concat(TREND_DATA));
@@ -1730,7 +1831,13 @@ function renderProc(){
     '<div class="tcard static" style="--tc:'+color+'">'
     + '<div class="tcard-top"><span class="tcard-ic">'+ic+'</span><span class="lbl">'+lbl+'</span></div>'+inner+'</div>';
   const noSource = split.candidates.length === 0;
-  const noSourceCard = bucketCardNoSource({c:'#C0392B', icon:'✉️', label:'RFQ source', desc:'authorised gate 0.05'}, sourceEmptyMessage('RFQ gate 0.05'));
+  const hmsFeed = PR_ROWS.filter(p=>isCpr(p) && isHmsPr(p));
+  const hmsAtInquiry = hmsFeed.filter(isRfqGatePr).length;
+  const noSourceCard = (dept===HMS_DEPT && hmsAtInquiry===0)
+    ? staticShell('#145A95','📄','Waiting RFQs',
+        '<div class="tcard-body2"><div><div class="tbig2">0</div><div class="tsub2">no Home Maintenance requisition passes through this step</div></div>'
+      + '<span class="tavg"><span class="tsub2">0 of '+hmsFeed.length+' Home Maintenance requisitions in the feed are at gate 0.05 · see the Home Maintenance band below</span></span></div>')
+    : bucketCardNoSource({c:'#C0392B', icon:'✉️', label:'RFQ source', desc:'authorised gate 0.05'}, sourceEmptyMessage('RFQ gate 0.05'));
   const totalCard = shell('#145A95','📄','Waiting RFQs','total',
       '<div class="tcard-body2"><div><div class="tbig2">'+total+'</div><div class="tsub2">CPR PRs still waiting at RFQ</div></div>'
     + '<span class="tavg"><span class="tsub2">'+excludedCount+' moved-on gate row'+(excludedCount===1?'':'s')+' excluded</span></span></div>');
@@ -1747,14 +1854,14 @@ function renderProc(){
 
   document.getElementById('procKpis').innerHTML =
       '<div class="procHead">Procurement · RFQ Waiting Time'
-    + '<small>· PR created → inquiry sent to suppliers · all departments</small></div>'
+    + '<small>· PR created → inquiry sent to suppliers · '+scopeLabel+'</small></div>'
     + '<div class="source-note"><strong>Waiting population:</strong> requisitions at authorised gate 0.05 are counted unless downstream CRM evidence shows the quote has moved past RFQ.</div>'
     + '<div class="source-note"><strong>Progression check:</strong> '+excludedCount+' gate row'+(excludedCount===1?' is':'s are')+' excluded because downstream CRM evidence shows '+(excludedCount===1?'the quote has':'the quotes have')+' already moved past RFQ.</div>'
     + '<div class="source-note"><strong>Drafting measurement check:</strong> '+escapeHtml(draftingClockText)+'</div>'
     + '<div class="source-note"><strong>6-hour target:</strong> applies only to '+escapeHtml(RFQ_TARGET_POLICY.department)+' '+escapeHtml(RFQ_TARGET_POLICY.definition)+'. '+escapeHtml(RFQ_TARGET_POLICY.markerReason)+' No row is assessed against the target and the percentage is suppressed.</div>'
     + '<div class="cardrow">'
     + (noSource ? noSourceCard : totalCard + medianCard + targetCard + longestCard)
-    + '</div>';
+    + '</div>' + renderHmsRfq(dept);
 }
 
 /* ============================ DRILL-THROUGH ============================ */
@@ -1817,6 +1924,27 @@ async function drillRfq(cat){
         '<b>'+(x.rfqMs!=null ? fmtDurMs(x.rfqMs) : '—')+'</b>', tintTag((x.p.authorisedGateNumber||'0.05')+' '+(x.p.authorisedGateName||'Inquiry Sent to Suppliers'),'#145A95') ];
     }));
 }
+async function drillHms(cat){
+  const s = hmsRfqSplit(currentPRs(), PR_ROWS);
+  const waiting = cat==='waiting';
+  let list = (waiting ? s.waiting : s.priced).slice().sort((a,b)=>
+    (a.elapsedMs==null) - (b.elapsedMs==null) || (b.elapsedMs||0) - (a.elapsedMs||0));
+  const detailed = await detailedPrRows(list.map(x=>x.p));
+  list = list.map((x,index)=>Object.assign({},x,{p:detailed[index]}));
+  const notRecorded = '<span class="drill-ongoing">not recorded</span>';
+  const time = x => '<b>'+(x.elapsedMs!=null ? fmtDurMs(x.elapsedMs) : '—')+'</b>'
+    + (x.elapsedMs!=null && x.elapsedMs<=RFQ_THRESHOLD_MS ? ' '+tintTag('within 6h','#2E8B57') : '');
+  const base = x => [ escapeHtml(x.p.purchaseRequisition||'—'), qlinkNo(x.qn), escapeHtml(prProject(x.p)||'—'), fmt(x.start)||notRecorded ];
+  if(waiting){
+    openDrill('Home Maintenance · waiting for a price — PR received → now',
+      ['PR No','Quote No','Project','PR Created · waiting since','Gate 0.03 recorded','Waiting so far'],
+      list.map(x=>base(x).concat([ fmt(x.p.stepDate)||notRecorded, time(x) ])));
+  }else{
+    openDrill('Home Maintenance · priced — PR received → supplier price updated',
+      ['PR No','Quote No','Project','PR Created','Priced at','Time to price'],
+      list.map(x=>base(x).concat([ fmt(x.end)||notRecorded, time(x) ])));
+  }
+}
 
 /* ---- Race-Control splash: falling rain lines + dismiss ---- */
 function initSplash(){
@@ -1850,7 +1978,7 @@ function dismissSplash(){
 }
 
 /* ============================ BOOT ============================ */
-window.__QP_TEST__ = { weekBoundaries, dubaiWeekStartUtc, freshnessState, datasetScheduleState, staleRefreshLabel, updateDatasetStaleBanner, sourceEmptyMessage, normalizePrRows, rfqSourceRows, rfqElapsedMs, draftingClockExclusions, stageHasProgress, estimationHasProgress, quoteProgressedPastRfq, rfqWaitingSplit, rfqRecord, RFQ_TARGET_POLICY, median, recordFreshness, mergeFutureIgnored, futureIgnoredText, applyTheme, toggleTheme, sourceFailure, mergeSourceIssues, sourceIssueMessage, fetchDataverseSources, fetchPrpoSource, joinSources, fetchAndJoin };
+window.__QP_TEST__ = { weekBoundaries, dubaiWeekStartUtc, freshnessState, datasetScheduleState, staleRefreshLabel, updateDatasetStaleBanner, sourceEmptyMessage, normalizePrRows, rfqSourceRows, rfqElapsedMs, draftingClockExclusions, stageHasProgress, estimationHasProgress, quoteProgressedPastRfq, rfqWaitingSplit, rfqRecord, RFQ_TARGET_POLICY, HMS_DEPT, isHmsPr, hmsRfqSplit, hmsStats, median, recordFreshness, mergeFutureIgnored, futureIgnoredText, applyTheme, toggleTheme, sourceFailure, mergeSourceIssues, sourceIssueMessage, fetchDataverseSources, fetchPrpoSource, joinSources, fetchAndJoin };
 initTheme();
 initSplash();
 (async function(){

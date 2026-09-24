@@ -70,7 +70,12 @@ assert.equal(sunday[2].end.getTime() - sunday[2].start.getTime(), sunday[1].end.
 assert.equal(qp.freshnessState('2026-09-20T07:00:00Z', '2026-09-21T06:00:00Z').cls, 'live');
 assert.equal(qp.freshnessState('2026-09-19T05:00:00Z', '2026-09-21T06:00:00Z').cls, 'warn');
 assert.equal(qp.freshnessState('2026-09-17T04:59:00Z', '2026-09-21T06:00:00Z').cls, 'bad');
-assert.match(html, /v60/);
+assert.match(html, /<span class="ver">v61<\/span>/);
+assert.match(html, /Home Maintenance · RFQ Time<small>· PR received → supplier price updated in PR/);
+assert.match(html, /The clock starts when Procurement receives the requisition and stops when the supplier price is written into it\. Home Maintenance requisitions do not pass through \\'inquiry sent to suppliers\\', which is why they were missing from the band above\./);
+assert.match(html, /6-hour target applied to every Home Maintenance requisition\. The system does not mark which are regular or recurring, so one-off work is included\./);
+assert.match(html, /Requisitions that have already moved on to an LPO are not counted — the feed carries only the current step\./);
+assert.match(html, /no Home Maintenance requisition passes through this step/);
 assert.match(html, /PR\/PO figures still loading/);
 assert.match(html, /PRPO_DATASET_URL \+ '\?view=dashboard&refresh=0'/);
 assert.match(html, /PRPO_DATASET_URL\+'\?view=full&refresh=0'/);
@@ -136,6 +141,47 @@ const compactRows = qp.normalizePrRows([['CPR-200','Q-200','2026-09-21T05:00:00Z
   ['purchaseRequisition','quotationReference','createdDateTime','submittedDate','department','projectId','ledgerDimensionRaw','stepName','stepDate','authorisedGateNumber','authorisedGateName']);
 assert.equal(compactRows[0].purchaseRequisition, 'CPR-200');
 assert.equal(compactRows[0].createdDateTime, '2026-09-21T05:00:00Z');
+const HMS = 'Home Maintenance Services';
+const hmsNow = Date.parse('2026-09-24T12:00:00Z');
+const hmsRows = [
+  { purchaseRequisition: 'CPR-900', department: HMS, createdDateTime: '2026-09-23T04:00:00Z', stepDate: '2026-09-23T09:00:00Z', authorisedGateNumber: '0.09' },
+  { purchaseRequisition: 'CPR-901', department: HMS, createdDateTime: '2026-09-22T04:00:00Z', stepDate: '2026-09-22T11:00:00Z', authorisedGateNumber: '0.09' },
+  { purchaseRequisition: 'CPR-902', department: HMS, createdDateTime: '2026-09-21T04:00:00Z', stepDate: '2026-09-24T04:00:00Z', authorisedGateNumber: '0.09' },
+  { purchaseRequisition: 'CPR-903', department: HMS, createdDateTime: '2026-09-20T04:00:00Z', stepDate: '', authorisedGateNumber: '0.09' },
+  { purchaseRequisition: 'CPR-904', department: HMS, createdDateTime: '2026-09-24T02:00:00Z', stepDate: '2026-09-24T03:00:00Z', authorisedGateNumber: '0.03' },
+  { purchaseRequisition: 'CPR-905', department: HMS, createdDateTime: '2026-09-22T12:00:00Z', stepDate: '2026-09-23T03:00:00Z', authorisedGateNumber: '0.03' },
+  { purchaseRequisition: 'CPR-906', department: HMS, createdDate: '2026-09-22T00:00:00Z', stepDate: '2026-09-23T03:00:00Z', authorisedGateNumber: '0.03' },
+  { purchaseRequisition: 'CPR-907', department: HMS, createdDateTime: '2026-09-21T04:00:00Z', stepDate: '2026-09-22T04:00:00Z', authorisedGateNumber: '0.20' },
+  { purchaseRequisition: 'CPR-908', department: HMS, createdDateTime: '2026-09-21T04:00:00Z', stepDate: '2026-09-21T06:00:00Z', authorisedGateNumber: '0.08', authorisedGateName: 'Materials / SOW Confirmed by Operation' },
+  { purchaseRequisition: 'CPR-909', department: 'Building Services', createdDateTime: '2026-09-23T04:00:00Z', stepDate: '2026-09-23T05:00:00Z', authorisedGateNumber: '0.09' },
+  { purchaseRequisition: 'CPR-910', department: HMS, createdDateTime: '2026-09-23T10:00:00Z', stepDate: '2026-09-23T08:00:00Z', authorisedGateNumber: '0.09' }
+];
+const hmsInScope = hmsRows.filter(p => p.purchaseRequisition !== 'CPR-907');
+const hms = qp.hmsRfqSplit(hmsInScope, hmsRows, hmsNow);
+assert.equal(qp.HMS_DEPT, HMS);
+assert.equal(hms.pricedStats.total, 5, 'every HMS row at 0.09 is priced, measured or not');
+assert.equal(hms.pricedStats.measured, 3, 'missing stop time and negative clock are not measured, never zero');
+assert.equal(hms.pricedStats.unmeasured, 2);
+assert.equal(hms.pricedStats.medianMs, 7 * 3600000);
+assert.equal(hms.pricedStats.minMs, 5 * 3600000);
+assert.equal(hms.pricedStats.maxMs, 72 * 3600000);
+assert.equal(hms.pricedStats.within6h, 1);
+assert.equal(hms.pricedStats.pct6h, 33);
+assert.equal(hms.waitingStats.total, 3);
+assert.equal(hms.waitingStats.measured, 2, 'a date-only creation value must not start a midnight clock');
+assert.equal(hms.waitingStats.medianMs, (10 + 48) / 2 * 3600000);
+assert.equal(hms.waitingStats.maxMs, 48 * 3600000);
+assert.equal(hms.waitingStats.over6h, 2);
+assert.equal(hms.movedOnFeed, 1);
+assert.equal(hms.movedOnInScope, 0);
+assert.equal(hms.feedAtInquiryGate, 0);
+assert.deepEqual(Object.assign({}, hms.other), { '0.08 Materials / SOW Confirmed by Operation': 1 });
+assert.equal(hms.inScope, 9);
+assert.equal(hms.feedTotal, 10);
+const hmsEmpty = qp.hmsRfqSplit([], [], hmsNow);
+assert.equal(hmsEmpty.pricedStats.medianMs, null);
+assert.equal(hmsEmpty.pricedStats.pct6h, null, 'no data is not 0%');
+
 const refreshPolicy = { weekdays:[1,2,3,4,5], slotsMinutes:[305,335], marginMinutes:20 };
 assert.equal(qp.datasetScheduleState({generatedAt:'2026-09-21T05:36:00Z',refreshPolicy},'2026-09-21T06:00:00Z').stale, false);
 assert.equal(qp.datasetScheduleState({generatedAt:'2026-09-21T05:04:00Z',refreshPolicy},'2026-09-21T06:00:00Z').stale, true);
