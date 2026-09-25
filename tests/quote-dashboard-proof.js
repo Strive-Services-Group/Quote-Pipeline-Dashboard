@@ -70,12 +70,13 @@ assert.equal(sunday[2].end.getTime() - sunday[2].start.getTime(), sunday[1].end.
 assert.equal(qp.freshnessState('2026-09-20T07:00:00Z', '2026-09-21T06:00:00Z').cls, 'live');
 assert.equal(qp.freshnessState('2026-09-19T05:00:00Z', '2026-09-21T06:00:00Z').cls, 'warn');
 assert.equal(qp.freshnessState('2026-09-17T04:59:00Z', '2026-09-21T06:00:00Z').cls, 'bad');
-assert.match(html, /<span class="ver">v61<\/span>/);
-assert.match(html, /Home Maintenance · RFQ Time<small>· PR received → supplier price updated in PR/);
-assert.match(html, /The clock starts when Procurement receives the requisition and stops when the supplier price is written into it\. Home Maintenance requisitions do not pass through \\'inquiry sent to suppliers\\', which is why they were missing from the band above\./);
-assert.match(html, /6-hour target applied to every Home Maintenance requisition\. The system does not mark which are regular or recurring, so one-off work is included\./);
-assert.match(html, /Requisitions that have already moved on to an LPO are not counted — the feed carries only the current step\./);
-assert.match(html, /no Home Maintenance requisition passes through this step/);
+assert.match(html, /<span class="ver">v62<\/span>/);
+assert.match(html, /RFQ · Sent for RFQ → RFQ Completed<small>· '\+\(dept \? escapeHtml\(dept\) : 'all departments'\)/);
+assert.match(html, /The clock starts when the quote is marked Sent for RFQ and stops when it is marked RFQ Completed\. What Procurement does in F&O in between is shown inside each row\./);
+assert.match(html, /The system does not mark regular or recurring work, so one-off work is included\./);
+assert.doesNotMatch(html, /Home Maintenance · RFQ Time/, 'the retired Home Maintenance F&O band must not return');
+assert.doesNotMatch(html, /Procurement · RFQ Waiting Time/, 'the retired gate 0.05 band must not return');
+assert.doesNotMatch(html, /\$top=\d+[^']*quotedetails|quotedetails\?\$top/, 'no truncation on RFQ line reads');
 assert.match(html, /PR\/PO figures still loading/);
 assert.match(html, /PRPO_DATASET_URL \+ '\?view=dashboard&refresh=0'/);
 assert.match(html, /PRPO_DATASET_URL\+'\?view=full&refresh=0'/);
@@ -88,9 +89,7 @@ assert.doesNotMatch(html, /raw:\s*row/);
 assert.match(html, /indexedDB\.open\(QP_CACHE_DB,1\)/);
 assert.match(html, /if\(PRPO_LOADING\) return; \/\/ keep the last complete durable snapshot/);
 assert.match(html, /const hadCache = await qpCacheLoad\(\)/);
-assert.match(html, /Waiting population:/);
-assert.match(html, /No row is assessed against the target and the percentage is suppressed\./);
-assert.doesNotMatch(html, /percentage suppressed until the target is agreed/);
+assert.match(html, /6-hour comparison:<\/strong> applied to every quote\./);
 assert.doesNotMatch(html, /Within 6h target/);
 assert.match(html, /\.tcard\.static \.tavg\{[^}]*white-space:normal/);
 
@@ -120,67 +119,95 @@ assert.deepEqual(elapsed, [5 * 3600000, 41 * 3600000]);
 assert.equal(elapsed.filter(ms => ms <= 6 * 3600000).length, 1);
 assert.equal(qp.median(elapsed), 23 * 3600000);
 assert.equal(qp.draftingClockExclusions([{ _draftingClockInvalid: true }, { _draftingClockInvalid: false }]), 1);
-const waitingSplit = qp.rfqWaitingSplit([
-  { purchaseRequisition: 'CPR-035825', quotationReference: 'Q-44031', createdDateTime: '2026-09-19T13:50:48Z', stepDate: '2026-09-21T10:12:59Z', authorisedGateNumber: '0.05' },
-  { purchaseRequisition: 'CPR-035894', quotationReference: 'Q-44100', createdDateTime: '2026-09-22T01:55:24Z', stepDate: '2026-09-22T06:25:22Z', authorisedGateNumber: '0.05' },
-  { purchaseRequisition: 'CPR-035900', quotationReference: 'Q-44106', createdDateTime: '2026-09-22T02:00:00Z', stepDate: '2026-09-22T06:40:07Z', authorisedGateNumber: '0.05' }
-], [
-  { quoteNo: 'Q-44031', status: 'Unscheduled WorkOrder', customer: { status:'Sent for approval', start:'2026-09-22T09:28:44Z' }, scheduling: { a:'2026-09-22T12:59:22Z' }, _woName:'1697002' },
-  { quoteNo: 'Q-44100', status: 'Sent for Customer Approval', internal: { status:'Approved', start:'2026-09-22T05:55:30Z', end:'2026-09-22T06:24:45Z' }, customer: { status:'Sent for approval', start:'2026-09-22T06:25:22Z' } },
-  { quoteNo: 'Q-44106', status: 'Sent for RFQ', est: { any:false }, internal: {}, customer: {}, scheduling: {}, workExec: {} }
-]);
-assert.equal(waitingSplit.candidates.length, 3);
-assert.deepEqual(Array.from(waitingSplit.excluded, entry => entry.p.quotationReference).sort(), ['Q-44031','Q-44100']);
-assert.deepEqual(Array.from(waitingSplit.waiting, entry => entry.p.quotationReference), ['Q-44106']);
-assert.equal(qp.quoteProgressedPastRfq({ est:{ any:true } }), true);
-assert.equal(qp.quoteProgressedPastRfq({ status:'Sent for RFQ', est:{ any:false }, internal:{}, customer:{} }), false);
-assert.equal(qp.RFQ_TARGET_POLICY.department, 'Home Maintenance Services');
-assert.equal(qp.RFQ_TARGET_POLICY.markerAvailable, false);
-assert.match(qp.RFQ_TARGET_POLICY.markerReason, /does not identify regular or recurring work/);
 const compactRows = qp.normalizePrRows([['CPR-200','Q-200','2026-09-21T05:00:00Z','2026-09-21T10:00:00Z','Commercial','','','Procurement sends inquiry/RFQ to suppliers','2026-09-21T09:00:00Z','0.05','Inquiry Sent to Suppliers']],
   ['purchaseRequisition','quotationReference','createdDateTime','submittedDate','department','projectId','ledgerDimensionRaw','stepName','stepDate','authorisedGateNumber','authorisedGateName']);
 assert.equal(compactRows[0].purchaseRequisition, 'CPR-200');
 assert.equal(compactRows[0].createdDateTime, '2026-09-21T05:00:00Z');
-const HMS = 'Home Maintenance Services';
-const hmsNow = Date.parse('2026-09-24T12:00:00Z');
-const hmsRows = [
-  { purchaseRequisition: 'CPR-900', department: HMS, createdDateTime: '2026-09-23T04:00:00Z', stepDate: '2026-09-23T09:00:00Z', authorisedGateNumber: '0.09' },
-  { purchaseRequisition: 'CPR-901', department: HMS, createdDateTime: '2026-09-22T04:00:00Z', stepDate: '2026-09-22T11:00:00Z', authorisedGateNumber: '0.09' },
-  { purchaseRequisition: 'CPR-902', department: HMS, createdDateTime: '2026-09-21T04:00:00Z', stepDate: '2026-09-24T04:00:00Z', authorisedGateNumber: '0.09' },
-  { purchaseRequisition: 'CPR-903', department: HMS, createdDateTime: '2026-09-20T04:00:00Z', stepDate: '', authorisedGateNumber: '0.09' },
-  { purchaseRequisition: 'CPR-904', department: HMS, createdDateTime: '2026-09-24T02:00:00Z', stepDate: '2026-09-24T03:00:00Z', authorisedGateNumber: '0.03' },
-  { purchaseRequisition: 'CPR-905', department: HMS, createdDateTime: '2026-09-22T12:00:00Z', stepDate: '2026-09-23T03:00:00Z', authorisedGateNumber: '0.03' },
-  { purchaseRequisition: 'CPR-906', department: HMS, createdDate: '2026-09-22T00:00:00Z', stepDate: '2026-09-23T03:00:00Z', authorisedGateNumber: '0.03' },
-  { purchaseRequisition: 'CPR-907', department: HMS, createdDateTime: '2026-09-21T04:00:00Z', stepDate: '2026-09-22T04:00:00Z', authorisedGateNumber: '0.20' },
-  { purchaseRequisition: 'CPR-908', department: HMS, createdDateTime: '2026-09-21T04:00:00Z', stepDate: '2026-09-21T06:00:00Z', authorisedGateNumber: '0.08', authorisedGateName: 'Materials / SOW Confirmed by Operation' },
-  { purchaseRequisition: 'CPR-909', department: 'Building Services', createdDateTime: '2026-09-23T04:00:00Z', stepDate: '2026-09-23T05:00:00Z', authorisedGateNumber: '0.09' },
-  { purchaseRequisition: 'CPR-910', department: HMS, createdDateTime: '2026-09-23T10:00:00Z', stepDate: '2026-09-23T08:00:00Z', authorisedGateNumber: '0.09' }
-];
-const hmsInScope = hmsRows.filter(p => p.purchaseRequisition !== 'CPR-907');
-const hms = qp.hmsRfqSplit(hmsInScope, hmsRows, hmsNow);
-assert.equal(qp.HMS_DEPT, HMS);
-assert.equal(hms.pricedStats.total, 5, 'every HMS row at 0.09 is priced, measured or not');
-assert.equal(hms.pricedStats.measured, 3, 'missing stop time and negative clock are not measured, never zero');
-assert.equal(hms.pricedStats.unmeasured, 2);
-assert.equal(hms.pricedStats.medianMs, 7 * 3600000);
-assert.equal(hms.pricedStats.minMs, 5 * 3600000);
-assert.equal(hms.pricedStats.maxMs, 72 * 3600000);
-assert.equal(hms.pricedStats.within6h, 1);
-assert.equal(hms.pricedStats.pct6h, 33);
-assert.equal(hms.waitingStats.total, 3);
-assert.equal(hms.waitingStats.measured, 2, 'a date-only creation value must not start a midnight clock');
-assert.equal(hms.waitingStats.medianMs, (10 + 48) / 2 * 3600000);
-assert.equal(hms.waitingStats.maxMs, 48 * 3600000);
-assert.equal(hms.waitingStats.over6h, 2);
-assert.equal(hms.movedOnFeed, 1);
-assert.equal(hms.movedOnInScope, 0);
-assert.equal(hms.feedAtInquiryGate, 0);
-assert.deepEqual(Object.assign({}, hms.other), { '0.08 Materials / SOW Confirmed by Operation': 1 });
-assert.equal(hms.inScope, 9);
-assert.equal(hms.feedTotal, 10);
-const hmsEmpty = qp.hmsRfqSplit([], [], hmsNow);
-assert.equal(hmsEmpty.pricedStats.medianMs, null);
-assert.equal(hmsEmpty.pricedStats.pct6h, null, 'no data is not 0%');
+
+// CRM RFQ window: Sent for RFQ -> RFQ Completed, population = quotes with an RFQ = Yes line.
+const H = 3600000;
+const now = Date.parse('2026-09-25T06:00:00Z');
+const FIELDS = ['quoteId','division','start','end','elapsedMs','cycles','open','waits'];
+const row = (id, waits) => [id, 'FACILITIES_MANAGEMENT', waits[0][0], waits[0][1], waits[0][1] ? Date.parse(waits[0][1]) - Date.parse(waits[0][0]) : null, waits.length, !waits[waits.length - 1][1], waits];
+const section = { status: 'OK', historyReadAt: '2026-09-25T05:59:00Z', newestEventUtc: '2026-09-25T05:50:00Z',
+  captureDelayMinutes: { median: 7.7, p90: 14.2, max: 15.6 }, fields: FIELDS, rows: [
+  row('a', [['2026-09-20T04:00:00Z', '2026-09-20T08:00:00Z']]),
+  row('b', [['2026-09-21T04:00:00Z', '2026-09-22T10:00:00Z']]),
+  row('c', [['2026-09-24T06:00:00Z', null]]),
+  row('d', [['2026-09-23T06:00:00Z', null]]),
+  row('e', [['2026-09-10T04:00:00Z', '2026-09-10T05:00:00Z'], ['2026-09-18T04:00:00Z', '2026-09-18T12:00:00Z']]),
+  row('f', [['2026-09-20T04:00:00Z', '2026-09-20T05:00:00Z']]),
+  row('g', [['2026-09-20T09:00:00Z', '2026-09-20T08:00:00Z']]),
+  row('h', [['2026-08-01T04:00:00Z', '2026-08-01T05:00:00Z']]),
+  row('i', [['2026-09-24T12:00:00Z', null]]),
+  row('j', [['2026-09-20T04:00:00Z', '2026-09-20T10:00:00Z']])
+] };
+const BS = 'Building Services', HMS = 'Home Maintenance Services';
+const ctx = {
+  a: { quoteNo: 'Q-A', dept: HMS, project: 'P1', status: 'Posted WorkOrder', rfqLine: true },
+  b: { quoteNo: 'Q-B', dept: BS, project: 'P2', status: 'RFQ Completed', rfqLine: true },
+  c: { quoteNo: 'Q-C', dept: BS, project: 'P2', status: 'Sent for RFQ', rfqLine: true },
+  d: { quoteNo: 'Q-D', dept: BS, project: 'P3', status: 'In Progress', rfqLine: true },
+  e: { quoteNo: 'Q-E', dept: HMS, project: 'P1', status: 'RFQ Completed', rfqLine: true },
+  f: { quoteNo: 'Q-F', dept: HMS, project: 'P1', status: 'RFQ Completed', rfqLine: false },
+  g: { quoteNo: 'Q-G', dept: BS, project: 'P4', status: 'RFQ Completed', rfqLine: true },
+  h: { quoteNo: 'Q-H', dept: BS, project: 'P4', status: 'RFQ Completed', rfqLine: true },
+  i: { quoteNo: 'Q-I', dept: HMS, project: 'P1', status: 'Sent for RFQ', rfqLine: true },
+  j: { quoteNo: 'Q-J', dept: HMS, project: 'P1', status: 'RFQ Completed', rfqLine: true }
+};
+const scope = { fromMs: Date.parse('2026-08-24T20:00:00Z'), toMs: Date.parse('2026-09-25T19:59:59Z'), nowMs: now };
+const waits = qp.rfqCrmWaits(section, ctx, scope);
+assert.equal(waits.some(w => w.quoteId === 'f'), false, 'a quote with no RFQ = Yes line is outside the population');
+assert.equal(waits.some(w => w.quoteId === 'h'), false, 'a wait sent before the From date is outside the dates');
+assert.equal(waits.find(w => w.quoteId === 'd').state, 'movedOn', 'open wait on a quote no longer in Sent for RFQ is not waiting');
+assert.equal(waits.find(w => w.quoteId === 'g').state, 'negative');
+assert.equal(waits.find(w => w.quoteId === 'g').elapsedMs, null, 'a negative clock is not measured, never zero');
+const stats = qp.rfqCrmStats(waits);
+assert.equal(stats.completed.n, 5, 'a, b, both cycles of e, j');
+assert.equal(stats.completed.minMs, 1 * H);
+assert.equal(stats.completed.maxMs, 30 * H);
+assert.equal(stats.completed.medianMs, 6 * H);
+assert.equal(stats.completed.within6h, 3, '<= 6h counts as within');
+assert.equal(stats.completed.pct6h, 60);
+assert.equal(stats.waiting.n, 2);
+assert.equal(stats.waiting.maxMs, 24 * H);
+assert.equal(stats.waiting.medianMs, (24 + 18) / 2 * H);
+assert.equal(stats.waiting.over6h, 2);
+assert.equal(stats.cycled.quotes, 1);
+assert.equal(stats.cycled.waits, 2);
+assert.equal(stats.movedOn, 1);
+assert.equal(stats.negative, 1);
+const hmsStats = qp.rfqCrmStats(qp.rfqCrmWaits(section, ctx, Object.assign({ dept: HMS }, scope)));
+assert.equal(hmsStats.completed.n, 4);
+assert.equal(hmsStats.waiting.n, 1);
+const empty = qp.rfqCrmStats([]);
+assert.equal(empty.completed.pct6h, null, 'no data is not 0%');
+assert.equal(empty.completed.medianMs, null);
+assert.deepEqual(qp.rfqContextIds(section, scope.fromMs, scope.toMs, now).sort(), ['a','b','c','d','e','f','g','i','j']);
+
+qp.setRfqState({ RFQ_CRM: section, RFQ_CTX: ctx, RFQ_POP: { createdWithLine: 3, noStart: [{ quoteId: 'z', dept: BS, status: 'Requested for Revised' }] }, RFQ_CTX_READY: true, PRPO_LOADING: false,
+  PR_ROWS: [{ purchaseRequisition: 'CPR-1', quotationReference: 'Q-C', createdDateTime: '2026-09-24T07:00:00Z', stepDate: '2026-09-24T09:00:00Z', authorisedGateNumber: '0.05', authorisedGateName: 'Inquiry Sent to Suppliers', holder: 'Procurement buyer' }] });
+const band = qp.rfqCrmBandHtml('');
+assert.match(band, /RFQ · Sent for RFQ → RFQ Completed<small>· all departments/);
+assert.match(band, /History read at<\/strong>/);
+assert.match(band, /median 8 min after it happens \(slowest 16 min in the last 7 days\)/);
+assert.match(band, /1 quote created in these dates with an RFQ line has never been marked Sent for RFQ \(most are now Requested for Revised\)/);
+assert.match(qp.rfqCrmBandHtml(BS), /<small>· Building Services/);
+const steps = qp.rfqSteps('Q-C');
+assert.equal(steps.length, 1);
+assert.equal(steps[0].gate, '0.05');
+const lanes = qp.circuitLanes(section, ctx, '', now);
+assert.deepEqual(lanes.pending.map(w => w.quoteId), ['c', 'i'], 'longest wait first');
+assert.deepEqual(lanes.done.map(w => w.quoteId), ['b', 'j', 'a', 'e'], 'completed in the last 7 days, newest first');
+assert.match(qp.circuitPanel(lanes.pending[0]), /Holder: <b>Procurement buyer<\/b>/);
+assert.match(qp.circuitPanel(lanes.pending[0]), /CPR-1 · 0\.05 Inquiry Sent to Suppliers since/);
+qp.setRfqState({ RFQ_CRM: { status: 'UNAVAILABLE', historyReadAt: '2026-09-25T06:00:00Z', reason: 'Dataverse 403: missing prvReadssg_processevent' } });
+assert.match(qp.rfqCrmBandHtml(''), /missing prvReadssg_processevent\. No figure is shown; this is not zero\./);
+qp.setRfqState({ RFQ_CRM: null });
+assert.match(qp.rfqCrmBandHtml(''), /does not carry the Process History RFQ window yet/);
+qp.setRfqState({ PRPO_LOADING: true });
+assert.match(qp.rfqCrmBandHtml(''), /RFQ history still loading/);
+qp.setRfqState({ PRPO_LOADING: false, RFQ_CRM: null, PR_ROWS: [] });
 
 const refreshPolicy = { weekdays:[1,2,3,4,5], slotsMinutes:[305,335], marginMinutes:20 };
 assert.equal(qp.datasetScheduleState({generatedAt:'2026-09-21T05:36:00Z',refreshPolicy},'2026-09-21T06:00:00Z').stale, false);
@@ -254,8 +281,7 @@ async function runAsyncProof() {
     guardedFreshness,
     noSourceMessage: emptyMessage,
     realZero: { sourceRows: sourceRows.length, underSixHours: elapsed.filter(ms => ms <= 6 * 3600000).length, medianHours: qp.median(elapsed) / 3600000 },
-    waitingPopulation: { candidates: waitingSplit.candidates.length, waiting: waitingSplit.waiting.length, excludedQuoteNumbers: Array.from(waitingSplit.excluded, entry => entry.p.quotationReference) },
-    targetPolicy: qp.RFQ_TARGET_POLICY,
+    rfqCrm: { completed: stats.completed, waiting: stats.waiting, cycled: stats.cycled, movedOn: stats.movedOn, negative: stats.negative },
     progressive: { rowsReturned: progressive.rows.length, prpoPending: progressive.rows[0]._prpoPending },
     prpoFailure: { rowsReturned: joined.rows.length, issueKeys: joined.sourceIssues.map(issue => issue.key), rfqValue: joined.rows[0].rfq.val },
     theme: { persistedAfterToggle: storage.qp_theme, documentTheme: documentElement.attrs['data-theme'] }
