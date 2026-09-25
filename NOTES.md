@@ -78,3 +78,45 @@ The department dropdown already filtered the 0.05 band. With Home Maintenance se
 ## 25 September 2026, 11:35 Dubai: rolled back to v61
 
 The live page is back to the v61 page (`index.html` and tests restored to their 24 September content). v62 showed a refusal in place of RFQ figures, because the proxy cannot yet read SSG Process History. v62 is kept on the branch `cursor/v62-rfq-crm-window-2853` and can be restored once that read is granted. No permission, role or setting was changed.
+
+## 25 September 2026, 17:50 Dubai: v62 restored
+
+### Access
+
+- In DEV, the read-only role that holds the process event read had two SharePoint Data privileges (write and create) that Dataverse adds to new roles. They were removed from the parent role, so every business-unit copy now holds seven read privileges only.
+- That role was then granted to the proxy's managed identity in its own business unit: one role added, 39 privileges before, 44 after.
+- A forced dataset refresh from the signed-in live page, called at 17:46:46 and returned at 17:48:18, gave the RFQ section status OK with 593 quotes, history read at 17:48:17.
+
+### How the band reads
+
+- The Sent for RFQ and RFQ Completed times come from the proxy's shared RFQ section. The proxy reads the history with its own managed identity and keeps one copy for every caller.
+- The page adds quote context (department, status, whether the quote has an RFQ estimation line) by reading CRM with the signed-in person's own access, as the rest of the dashboard already does. A viewer who cannot read all quotes would see fewer quotes in the band.
+
+### Deploy
+
+- Commit 66e9b2f restores `index.html` and both test files from bea85bd. Both test files pass. The Pages run succeeded. Live `index.html` carries v62 and its SHA-256 equals the committed file.
+
+### Live figures, read 17:51 to 17:52 Dubai
+
+Page default dates (26 August to 25 September):
+
+| Scope | Completed | Median | Within 6h | Still waiting |
+|---|---:|---|---:|---:|
+| All departments | 186 | 1d 0h | 69 (37%) | 75 |
+| Building Services | 96 | 2d 1h | 27 (28%) | 61 |
+| Home Maintenance | 70 | 17h 17m | 32 (46%) | 2 |
+
+Sent for RFQ from 25 August, compared with the morning recount (history read 10:42):
+
+| Scope | Morning | Live | Change |
+|---|---|---|---|
+| All departments | 186 · 1d 0h · 68 (37%) · 73 | 191 · 1d 0h · 72 (38%) · 76 | +5 completed, +4 within 6h, +3 waiting |
+| Building Services | 93 · 2d 3h · 23 (25%) · 59 | 98 · 2d 2h · 27 (28%) · 61 | +5 completed, +4 within 6h, +2 waiting |
+| Home Maintenance | 73 · 14h 55m · 35 (48%) · 2 | 73 · 14h 55m · 35 (48%) · 2 | none |
+
+- 2 Building Services quotes that were waiting in the morning were completed during the day.
+- 8 quotes were sent for RFQ after the morning read: 7 Building Services and 1 in another department. 3 of the Building Services ones are already completed, each inside 6 hours. The other 5 are still waiting.
+- No wait disappeared and no completion time changed.
+- The page's default window starts on 26 August, so quotes sent on 25 August are outside it. That is why the default figures differ from the 25 August figures.
+- RFQ circuit: 108 quotes pending (103 over 6 hours) and 47 completions in the last 7 days.
+- No quote counted by the band or the circuit was created before 1 May. The history starts on 16 July.
