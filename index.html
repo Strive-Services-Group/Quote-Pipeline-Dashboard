@@ -150,38 +150,9 @@
   .pendchip{display:inline-flex;align-items:center;gap:5px;background:#FDF0EE;color:#C0392B;border-radius:9px;padding:3px 9px;font-size:12px;font-weight:800;white-space:nowrap;}
   .source-note{margin:0 0 10px;padding:8px 11px;border:1px solid var(--line);border-radius:10px;background:var(--soft);color:var(--muted);font-size:12.5px;font-weight:700;line-height:1.35;}
   .source-note strong{color:var(--ink);}
-  #procKpis .cardrow.rfq-row{grid-template-columns:repeat(3,minmax(0,1fr));}
-  @media(max-width:1100px){ #procKpis .cardrow.rfq-row{grid-template-columns:1fr;} }
-  .substep{font-size:12px;line-height:1.35;color:var(--muted);white-space:normal;min-width:260px;}
-  .substep b{color:var(--metric);}
-  /* ===== RFQ circuit view: SSG steel blue and gold ===== */
-  .rfq-circuit{padding:14px 30px 40px;}
-  .circ-head{display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap;padding:16px 20px;border-radius:14px;background:linear-gradient(135deg,var(--slate) 0%,var(--ocean) 70%,var(--steel) 100%);color:#fff;box-shadow:var(--shadow-lg);border-bottom:3px solid var(--warn);}
-  .circ-kicker{font-size:11px;font-weight:800;letter-spacing:.32em;text-transform:uppercase;color:#F6D08E;}
-  .circ-head h3{margin:3px 0 0;font-size:21px;font-weight:800;letter-spacing:.2px;}
-  .circ-meta{flex:1;min-width:260px;font-size:12.5px;font-weight:700;color:#DCEBF7;line-height:1.45;}
-  .circ-meta b{color:#fff;}
-  .circ-lane-head{display:flex;align-items:center;gap:10px;margin:20px 0 10px;font-size:13px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--metric);}
-  .circ-lane-head::before{content:'';width:18px;height:4px;border-radius:2px;background:var(--warn);}
-  .circ-lane-head.done::before{background:var(--good);}
-  .circ-lane-head::after{content:'';flex:1;height:1px;background:var(--line);}
-  .circ-lane-head span{font-size:12px;letter-spacing:.04em;color:var(--muted);text-transform:none;}
-  .circ-grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));}
-  .circ-panel{background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);border-top:4px solid var(--ocean);padding:10px 13px 11px;display:flex;flex-direction:column;gap:5px;min-width:0;}
-  .circ-panel.over6{border-top-color:var(--warn);}
-  .circ-panel.done{border-top-color:var(--good);}
-  .circ-top{display:flex;align-items:baseline;gap:8px;}
-  .circ-top .drill-q{font-size:15px;}
-  .circ-dept{margin-left:auto;font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;text-align:right;}
-  .circ-proj{font-size:12.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .circ-wait{display:flex;align-items:baseline;gap:8px;}
-  .circ-wait b{font-size:24px;font-weight:800;letter-spacing:-.5px;color:var(--metric-strong);}
-  .circ-panel.over6 .circ-wait b{color:#B7791F;}
-  .circ-wait span{font-size:11.5px;font-weight:700;color:var(--muted);}
-  .circ-line{font-size:12px;font-weight:700;color:var(--muted);line-height:1.35;}
-  .circ-line b{color:var(--metric);}
-  .circ-empty{padding:18px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);font-weight:700;font-size:13px;}
-  html[data-theme="dark"] .circ-panel.over6 .circ-wait b{color:#FFD58A;}
+  .procHead.hms-head{margin-top:20px;}
+  #procKpis .cardrow.hms-row{grid-template-columns:repeat(2,minmax(0,1fr));}
+  @media(max-width:640px){ #procKpis .cardrow.hms-row{grid-template-columns:1fr;} }
   .tlines{display:flex;flex-direction:column;gap:2px;flex:1 1 auto;min-width:0;font-size:12px;font-weight:700;color:var(--muted);line-height:1.3;}
   .tlines b{color:var(--metric);}
   .source-empty{padding:12px 15px 14px;color:var(--muted);font-size:12.5px;font-weight:700;line-height:1.35;}
@@ -372,10 +343,9 @@
   <span class="pill fresh-pill" id="readStamp">read —</span>
   <span class="pill" id="userPill" style="display:none"></span>
   <button class="hbtn theme-toggle" onclick="toggleTheme()" id="themeBtn" type="button" aria-label="Switch colour theme">Dark</button>
-  <button class="hbtn" onclick="toggleCircuit()" id="circuitBtn" style="display:none" type="button">RFQ circuit</button>
   <button class="hbtn" onclick="refreshAll(true)" id="refreshBtn" style="display:none">↻ Refresh</button>
   <button class="hbtn" onclick="signOut()" id="signoutBtn" style="display:none">Sign out</button>
-  <span class="ver">v62</span>
+  <span class="ver">v61</span>
 </header>
 <div class="dataset-stale-banner" id="datasetStaleBanner" role="status" aria-live="polite" style="display:none"></div>
 <div class="controls" id="controls" style="display:none">
@@ -395,17 +365,6 @@
 </div>
 <div class="kpiPanel" id="trendKpis" style="display:none"></div>
 <div class="kpiPanel" id="procKpis" style="display:none"></div>
-<div class="rfq-circuit" id="rfqCircuit" style="display:none">
-  <div class="circ-head">
-    <div><div class="circ-kicker">RFQ circuit</div><h3>Quotes pending RFQ · Sent for RFQ → RFQ Completed</h3></div>
-    <div class="circ-meta" id="circMeta"></div>
-    <button class="hbtn" onclick="toggleCircuit(false)" type="button">Back to dashboard</button>
-  </div>
-  <div class="circ-lane-head">Pending RFQ · longest wait first <span id="circPendCount"></span></div>
-  <div class="circ-grid" id="circPending"></div>
-  <div class="circ-lane-head done">RFQ Completed in the last 7 days <span id="circDoneCount"></span></div>
-  <div class="circ-grid" id="circDone"></div>
-</div>
 <div class="wrap" id="wrap" style="display:none">
   <table id="tbl">
     <thead>
@@ -471,11 +430,6 @@ let prpoFullDatasetCache = null;
 let prpoFullDatasetPromise = null;
 let SOURCE_ISSUES = [];
 let PRPO_LOADING = false;
-let RFQ_CRM = null;
-let RFQ_CTX = {};
-let RFQ_POP = null;
-let RFQ_CTX_READY = false;
-let RFQ_CTX_ISSUE = null;
 let TREND_SAME_AS_DATA = false;
 let REFRESH_SEQUENCE = 0;
 let QP_CACHE_WRITE = Promise.resolve();
@@ -678,10 +632,9 @@ function updateDatasetStaleBanner(meta, nowValue){
 async function enterApp(){
   dismissSplash();
   ['controls','trendKpis','procKpis','wrap'].forEach(id=>document.getElementById(id).style.display='');
-  ['refreshBtn','signoutBtn','circuitBtn'].forEach(id=>document.getElementById(id).style.display='');
+  ['refreshBtn','signoutBtn'].forEach(id=>document.getElementById(id).style.display='');
   const up=document.getElementById('userPill'); up.style.display=''; up.textContent = account.name || account.username || 'Signed in';
   await qpFirstRender(); // cache-first: show last data instantly, refresh in background
-  if(window.location && window.location.hash==='#rfq-circuit') toggleCircuit(true);
   if(refreshTimer) clearInterval(refreshTimer);
   refreshTimer = setInterval(()=>refreshAll(true).catch(()=>{}), 2*60*1000);
 }
@@ -771,8 +724,7 @@ function normalizePrRow(row){
     stepDate: pickField(row, ['stepDate','Step date and time','Stage event date and time']),
     authorisedGateNumber: pickField(row, ['authorisedGateNumber','Authorised gate number','Capture gate number']),
     authorisedGateName: pickField(row, ['authorisedGateName','Authorised gate name','Capture gate name']),
-    authorisedSource: pickField(row, ['Authority source']),
-    holder: pickField(row, ['holder','Pending Approver/User'])
+    authorisedSource: pickField(row, ['Authority source'])
   };
 }
 
@@ -1011,7 +963,7 @@ function joinSources(sourceSet, prpoRes, prpoPending){
     bookings.map(b=>b.createdon),
     prRows.map(prCreatedAt)
   ), readUtc);
-  return { rows, prRows, emailByQ, rfqCrm: prpoDataset ? (prpoDataset.rfqCrm || null) : undefined,
+  return { rows, prRows, emailByQ,
     prpoMeta: prpoDataset ? { revision: prpoDataset.revision, generatedAt: prpoDataset.generatedAt, sourceState: prpoDataset.sourceState, freshness: prpoDataset.freshness || null, exportAuthority: prpoDataset.exportAuthority || null, refreshPolicy: prpoDataset.refreshPolicy || null } : (prpoRes && prpoRes.issue ? { sourceState:'unavailable', error:prpoRes.issue } : null),
     newestDataUtc: freshness.newestUtc, readUtc, futureIgnored: freshness.futureIgnored,
     sourceIssues, prpoPending:!!prpoPending,
@@ -1083,8 +1035,7 @@ function qpCacheSave(){
   const payload = { DATA:DATA, TREND_DATA:trendSame?null:TREND_DATA, TREND_SAME_AS_DATA:trendSame,
     PR_ROWS:PRPO_LOADING?[]:PR_ROWS, EMAIL_BY_Q:EMAIL_BY_Q, PRPO_META:PRPO_LOADING?null:PRPO_META, PRPO_READY:!PRPO_LOADING,
     SOURCE_ISSUES:SOURCE_ISSUES, DATA_NEWEST_UTC:DATA_NEWEST_UTC, DATA_READ_UTC:DATA_READ_UTC,
-    DATA_FUTURE_IGNORED:DATA_FUTURE_IGNORED, QT:QUOTE_TYPE_FIELD,
-    RFQ_CRM:PRPO_LOADING?null:RFQ_CRM, RFQ_CTX:RFQ_CTX_READY?RFQ_CTX:null, RFQ_POP:RFQ_CTX_READY?RFQ_POP:null, at:Date.now() };
+    DATA_FUTURE_IGNORED:DATA_FUTURE_IGNORED, QT:QUOTE_TYPE_FIELD, at:Date.now() };
   try{ window.__QP_DATA = payload; }catch(e){}
   if(PRPO_LOADING) return; // keep the last complete durable snapshot until every source has settled
   QP_CACHE_WRITE = QP_CACHE_WRITE.catch(()=>{}).then(()=>qpCacheWriteStored(payload)).then(()=>{
@@ -1100,7 +1051,6 @@ async function qpCacheLoad(){
   PR_ROWS=c.PR_ROWS||[]; EMAIL_BY_Q=c.EMAIL_BY_Q||{}; PRPO_META=c.PRPO_META||null; PRPO_LOADING=c.PRPO_READY===false;
   SOURCE_ISSUES=c.SOURCE_ISSUES||[]; DATA_FUTURE_IGNORED=c.DATA_FUTURE_IGNORED||null;
   DATA_NEWEST_UTC=c.DATA_NEWEST_UTC||null; DATA_READ_UTC=c.DATA_READ_UTC||null;
-  RFQ_CRM=c.RFQ_CRM||null; RFQ_CTX=c.RFQ_CTX||{}; RFQ_POP=c.RFQ_POP||null; RFQ_CTX_READY=!!c.RFQ_CTX;
   if(DATA_NEWEST_UTC || DATA_READ_UTC) updateFreshnessStamps(DATA_NEWEST_UTC, DATA_READ_UTC, DATA_FUTURE_IGNORED);
   updateDatasetStaleBanner(PRPO_META);
   if(c.QT){ QUOTE_TYPE_FIELD=c.QT; QT_DETECTED=true; }
@@ -1134,7 +1084,6 @@ function applyRefreshResults(tableRes, trendRes, tableCoversTrend, prpoLoading){
   EMAIL_BY_Q = tableRes.emailByQ || {};
   PRPO_META = tableRes.prpoMeta || trendRes.prpoMeta || null;
   PRPO_LOADING = !!prpoLoading;
-  if(tableRes.rfqCrm !== undefined) RFQ_CRM = tableRes.rfqCrm;
   SOURCE_ISSUES = mergeSourceIssues(tableRes.sourceIssues, trendRes.sourceIssues);
   DATA_NEWEST_UTC = latestDate([tableRes.newestDataUtc, trendRes.newestDataUtc]);
   DATA_READ_UTC = latestDate([tableRes.readUtc, trendRes.readUtc]) || new Date().toISOString();
@@ -1176,8 +1125,6 @@ async function refreshAll(force){
     const tableRes = joinSources(tableSources,prpoRes,false);
     const trendRes = tableCoversTrend ? tableRes : joinSources(trendSources,prpoRes,false);
     applyRefreshResults(tableRes, trendRes, tableCoversTrend, false);
-    await loadRfqContext(fromISO, toISO, refreshSequence);
-    if(refreshSequence !== REFRESH_SEQUENCE) return;
     const warnText = sourceWarningText(SOURCE_ISSUES);
     setStatus((warnText ? 'live · '+warnText : 'live')+' · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}), warnText ? 'warn' : 'live');
   }catch(e){
@@ -1215,7 +1162,7 @@ function activeTrendRows(){
   if(proj) rows = rows.filter(r=>(r.project||'')===proj);
   return rows.filter(typeMatch);
 }
-function applyFilter(){ renderKpis(); render(); renderCircuit(); }
+function applyFilter(){ renderKpis(); render(); }
 
 function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function dcell(v){ return v ? '<span class="nowrap">'+fmt(v)+'</span>' : '<span class="none">—</span>'; }
@@ -1431,6 +1378,12 @@ function syncStickyTops(){
 window.addEventListener('resize', function(){ try{ syncStickyTops(); }catch(e){} });
 
 const RFQ_THRESHOLD_MS = 6*36e5;
+const RFQ_TARGET_POLICY = Object.freeze({
+  department:'Home Maintenance Services',
+  definition:'regular or recurring work with an established item and price',
+  markerAvailable:false,
+  markerReason:'The source does not identify regular or recurring work with an established item and price.'
+});
 function avg(a){ return a.length ? a.reduce((s,x)=>s+x,0)/a.length : null; }
 function metricMs(r,k){ if(k==='ageing') return r.ageingMs!=null ? r.ageingMs : null; return r[k] ? r[k].ms : null; }
 // A quote "hits" a stage the moment it has a START date for it. If there is no END yet,
@@ -1687,204 +1640,228 @@ function currentPRs(includeDateFilter){
   return prs;
 }
 function draftingClockExclusions(rows){ return (rows||[]).filter(r=>r && r._draftingClockInvalid).length; }
-/* ============ RFQ · Sent for RFQ → RFQ Completed (CRM quote status, from SSG Process History) ============ */
-const RFQ_CRM_STATUS = Object.freeze({ sent:'Sent for RFQ', completed:'RFQ Completed' });
-const RFQ_CRM_WORDING = 'The clock starts when the quote is marked Sent for RFQ and stops when it is marked RFQ Completed. What Procurement does in F&O in between is shown inside each row.';
-const RFQ_CRM_SIX_HOURS = 'The system does not mark regular or recurring work, so one-off work is included.';
-const RFQ_CIRCUIT_DONE_DAYS = 7;
-function prGate(p){ return String(p && p.authorisedGateNumber || '').trim(); }
-function rfqCrmRows(section){
-  if(!section || section.status!=='OK' || !Array.isArray(section.rows)) return [];
-  const f = section.fields || [];
-  const at = (r,n) => r[f.indexOf(n)];
-  return section.rows.map(r=>{
-    const listed = at(r,'waits');
-    const waits = Array.isArray(listed) && listed.length ? listed : [[at(r,'start'), at(r,'end')]];
-    return { quoteId:String(at(r,'quoteId')||'').toLowerCase(), division:at(r,'division')||'', cycles:Number(at(r,'cycles'))||waits.length, waits };
-  }).filter(q=>q.quoteId);
+function stageHasProgress(stage){
+  return !!(stage && (stage.status || stage.start || stage.end));
 }
-function dateScope(){
-  const fromEl=document.getElementById('fromDate'), toEl=document.getElementById('toDate');
-  return {
-    fromMs: (fromEl && fromEl.value) ? new Date(fromEl.value+'T00:00:00').getTime() : null,
-    toMs:   (toEl && toEl.value)     ? new Date(toEl.value  +'T23:59:59').getTime() : null
-  };
+function estimationHasProgress(est){
+  return !!(est && (est.any || ['proc','ops','other'].some(k=>stageHasProgress(est[k]))));
 }
-// One record per wait. Population: the quote has at least one estimation line with RFQ = Yes.
-// Completed = the wait has its RFQ Completed moment. Still waiting = no RFQ Completed yet and the quote is still
-// in status Sent for RFQ now. An open wait whose quote has since moved to another status is counted apart, never as waiting.
-function rfqCrmWaits(section, ctx, opts){
-  const o = opts || {}, nowMs = o.nowMs!=null ? o.nowMs : Date.now();
-  const out = [];
-  rfqCrmRows(section).forEach(q=>{
-    const c = (ctx||{})[q.quoteId];
-    if(!c || c.rfqLine!==true) return;
-    if(o.dept && (c.dept||'')!==o.dept) return;
-    q.waits.forEach((w,i)=>{
-      const s=ms(w[0]), e=ms(w[1]);
-      if(s==null) return;
-      if(o.fromMs!=null && s<o.fromMs) return;
-      if(o.toMs!=null && s>o.toMs) return;
-      const rec = { quoteId:q.quoteId, ctx:c, division:q.division, cycles:q.cycles, cycleNo:i+1, sentAt:w[0], completedAt:w[1]||null, elapsedMs:null, state:'' };
-      if(e!=null){ rec.state = e<s ? 'negative' : 'completed'; rec.elapsedMs = e<s ? null : e-s; }
-      else if(c.status===RFQ_CRM_STATUS.sent){ rec.state='waiting'; rec.elapsedMs=Math.max(0, nowMs-s); }
-      else rec.state='movedOn';
-      out.push(rec);
-    });
+function quoteProgressedPastRfq(row){
+  return !!(row && (
+    estimationHasProgress(row.est)
+    || stageHasProgress(row.internal)
+    || stageHasProgress(row.customer)
+    || (row.scheduling && (row.scheduling.a || row.scheduling.b))
+    || (row.workExec && (row.workExec.a || row.workExec.b))
+    || row._woName
+  ));
+}
+function rfqWaitingSplit(prs, quoteRows){
+  const quoteByNumber = {};
+  (quoteRows||[]).forEach(row=>{
+    const qn = row && row.quoteNo;
+    if(!qn) return;
+    if(!quoteByNumber[qn] || quoteProgressedPastRfq(row)) quoteByNumber[qn] = row;
   });
-  return out;
+  const candidates = rfqSourceRows(prs);
+  const waiting = [], excluded = [];
+  candidates.forEach(p=>{
+    const entry = {p, quote:quoteByNumber[p.quotationReference]||null};
+    (quoteProgressedPastRfq(entry.quote) ? excluded : waiting).push(entry);
+  });
+  return {candidates, waiting, excluded};
 }
-function rfqCrmStats(waits){
-  const vals = st => waits.filter(w=>w.state===st).map(w=>w.elapsedMs).sort((a,b)=>a-b);
-  const done = vals('completed'), wait = vals('waiting');
-  const within = done.filter(x=>x<=RFQ_THRESHOLD_MS).length;
-  const cycled = new Set(waits.filter(w=>w.cycles>1).map(w=>w.quoteId));
-  return {
-    completed:{ n:done.length, medianMs:median(done), minMs:done.length?done[0]:null, maxMs:done.length?done[done.length-1]:null,
-      within6h:within, pct6h:done.length?Math.round(within/done.length*100):null },
-    waiting:{ n:wait.length, medianMs:median(wait), maxMs:wait.length?wait[wait.length-1]:null, over6h:wait.filter(x=>x>RFQ_THRESHOLD_MS).length },
-    cycled:{ quotes:cycled.size, waits:waits.filter(w=>cycled.has(w.quoteId)).length },
-    movedOn:waits.filter(w=>w.state==='movedOn').length,
-    negative:waits.filter(w=>w.state==='negative').length,
-    quotes:new Set(waits.map(w=>w.quoteId)).size
-  };
+function rfqRecord(entry){
+    const p = entry.p;
+    const qn = p.quotationReference;
+    const raw = rfqElapsedMs(p);
+    const rfqMs = raw!=null ? Math.max(0, raw) : null;
+    return { p, qn, quote:entry.quote, inquiryT:p.stepDate, rfqMs, done:rfqMs!=null, missingClock:rfqMs==null };
 }
-function rfqSteps(quoteNo){
-  if(!quoteNo) return [];
-  return (PR_ROWS||[]).filter(p=>isCpr(p) && p.quotationReference===quoteNo).map(p=>({
-    pr:p.purchaseRequisition, created:p.createdDateTime||'', gate:prGate(p), gateName:p.authorisedGateName||p.stepName||'', stepDate:p.stepDate||'', holder:p.holder||''
-  })).sort((a,b)=>(ms(a.created)||0)-(ms(b.created)||0));
+// Classify each still-waiting CPR PR once for both the cards and drill-through.
+function rfqRecs(prs, quoteRows){
+  const sourcePrs = prs || currentPRs();
+  const sourceQuotes = quoteRows || DATA.concat(TREND_DATA);
+  return rfqWaitingSplit(sourcePrs, sourceQuotes).waiting.map(rfqRecord);
 }
-function rfqStepText(s){ return ((s.gate ? s.gate+' ' : '')+(s.gateName||'')).trim() || 'no gate recorded'; }
-function rfqStepsHtml(steps){
-  if(!steps.length) return '<span class="none">no requisition in the F&amp;O feed</span>';
-  return steps.map(s=>'<div class="substep"><b>'+escapeHtml(s.pr)+'</b> · requisition created '+(fmt(s.created)||'not recorded')
-    +' · now at '+escapeHtml(rfqStepText(s))+(s.stepDate ? ' since '+fmt(s.stepDate) : '')+'</div>').join('');
+
+// Home Maintenance requisitions skip gate 0.05: their RFQ step is 0.03 New PR Received → 0.09 Supplier Price Updated in PR.
+const HMS_DEPT = 'Home Maintenance Services';
+const HMS_GATES = Object.freeze({ received:'0.03', priced:'0.09', movedOn:'0.20' });
+function isHmsPr(p){ return String(p && p.department || '').trim() === HMS_DEPT; }
+function prGate(p){ return String(p && p.authorisedGateNumber || '').trim(); }
+// The clock starts only at the recorded creation date and time; a date-only fallback would start at midnight.
+function hmsRecord(p, endIso, nowMs){
+  const start = p.createdDateTime || '';
+  const s = ms(start), e = endIso==null ? nowMs : ms(endIso);
+  const elapsedMs = (s==null || e==null || e<s) ? null : e-s;
+  return { p, qn:p.quotationReference, start, end:endIso, elapsedMs };
 }
-function rfqLagText(section){
-  const lag = section && section.captureDelayMinutes;
-  if(!lag || lag.median==null) return 'lag not measured';
-  return 'Process History records a status change a median '+Math.round(lag.median)+' min after it happens (slowest '+Math.round(lag.max)+' min in the last 7 days)';
+function hmsStats(recs){
+  const vals = recs.map(r=>r.elapsedMs).filter(x=>x!=null).sort((a,b)=>a-b);
+  const within = vals.filter(x=>x<=RFQ_THRESHOLD_MS).length;
+  return { total:recs.length, measured:vals.length, unmeasured:recs.length-vals.length,
+    medianMs:median(vals), minMs:vals.length?vals[0]:null, maxMs:vals.length?vals[vals.length-1]:null,
+    within6h:within, over6h:vals.length-within, pct6h:vals.length?Math.round(within/vals.length*100):null };
 }
-async function dvChunks(ids, build){
-  const chunks=[]; for(let i=0;i<ids.length;i+=40) chunks.push(ids.slice(i,i+40));
-  const out=[]; let cursor=0;
-  async function worker(){ while(cursor<chunks.length){ const c=chunks[cursor++]; out.push(...await dvGet(build(c))); } }
-  await Promise.all(Array.from({length:Math.min(6,chunks.length)}, worker));
-  return out;
+function hmsRfqSplit(prs, allPrs, nowMs){
+  const now = nowMs!=null ? nowMs : Date.now();
+  const inScope = (prs||[]).filter(p=>isCpr(p) && isHmsPr(p));
+  const feedHms = (allPrs||[]).filter(p=>isCpr(p) && isHmsPr(p));
+  const priced = inScope.filter(p=>prGate(p)===HMS_GATES.priced).map(p=>hmsRecord(p, p.stepDate||'', now));
+  const waiting = inScope.filter(p=>prGate(p)===HMS_GATES.received).map(p=>hmsRecord(p, null, now));
+  const other = {};
+  inScope.filter(p=>![HMS_GATES.received,HMS_GATES.priced,HMS_GATES.movedOn].includes(prGate(p))).forEach(p=>{
+    const key = (prGate(p)||'no gate')+' '+(p.authorisedGateName||'');
+    other[key.trim()] = (other[key.trim()]||0)+1;
+  });
+  return { inScope:inScope.length, feedTotal:feedHms.length, priced, waiting,
+    pricedStats:hmsStats(priced), waitingStats:hmsStats(waiting),
+    movedOnFeed:feedHms.filter(p=>prGate(p)===HMS_GATES.movedOn).length,
+    movedOnInScope:inScope.filter(p=>prGate(p)===HMS_GATES.movedOn).length,
+    feedAtInquiryGate:feedHms.filter(isRfqGatePr).length, other };
 }
-function rfqContextIds(section, fromMs, toMs, nowMs){
-  const doneSince = nowMs - RFQ_CIRCUIT_DONE_DAYS*864e5;
-  return [...new Set(rfqCrmRows(section).filter(q=>q.waits.some(w=>{
-    const s=ms(w[0]), e=ms(w[1]); if(s==null) return false;
-    return (s>=fromMs && s<=toMs) || e==null || e>=doneSince;
-  })).map(q=>q.quoteId))];
+function hmsHead(){
+  return '<div class="procHead hms-head">Home Maintenance · RFQ Time<small>· PR received → supplier price updated in PR</small></div>';
 }
-async function fetchRfqContext(section, fromISO, toISO){
-  const ids = rfqContextIds(section, ms(fromISO), ms(toISO), Date.now());
-  const known = {};
-  DATA.concat(TREND_DATA).forEach(r=>{ if(r.quoteId) known[String(r.quoteId).toLowerCase()] = r; });
-  const ctx = {};
-  ids.forEach(id=>{ const r=known[id]; if(r) ctx[id] = { quoteNo:r.quoteNo, dept:r.dept||'', project:r.project||'', status:r.status||'', rfqLine:false }; });
-  const missing = ids.filter(id=>!ctx[id]);
-  const [quotes, lines, createdLines] = await Promise.all([
-    dvChunks(missing, c=>"quotes?$select=quoteid,quotenumber,statuscode,ssg_textdepartment,_ssg_communityproject_value"
-      + "&$expand=opportunityid($select=ssg_textdepartment)&$filter="+encodeURIComponent(c.map(id=>'quoteid eq '+id).join(' or '))),
-    dvChunks(ids, c=>"quotedetails?$select=_quoteid_value&$filter="+encodeURIComponent('ssg_rfq eq true and ('+c.map(id=>'_quoteid_value eq '+id).join(' or ')+')')),
-    dvGet("quotedetails?$select=_quoteid_value&$filter="+encodeURIComponent('ssg_rfq eq true and quoteid/createdon ge '+fromISO+' and quoteid/createdon le '+toISO))
-  ]);
-  quotes.forEach(q=>{ ctx[String(q.quoteid).toLowerCase()] = { quoteNo:q.quotenumber,
-    dept:((q.opportunityid && q.opportunityid.ssg_textdepartment) || q.ssg_textdepartment || '').trim(),
-    project:(q['_ssg_communityproject_value'+F]||'').trim(), status:q['statuscode'+F]||'', rfqLine:false }; });
-  lines.forEach(l=>{ const id=String(l._quoteid_value||'').toLowerCase(); if(ctx[id]) ctx[id].rfqLine = true; });
-  const withStart = new Set(rfqCrmRows(section).map(q=>q.quoteId));
-  const createdWithLine = [...new Set(createdLines.map(l=>String(l._quoteid_value||'').toLowerCase()).filter(Boolean))];
-  const noStart = createdWithLine.filter(id=>!withStart.has(id)).map(id=>{ const r=known[id]; return { quoteId:id, quoteNo:r?r.quoteNo:'', dept:r?(r.dept||''):'', status:r?(r.status||''):'' }; });
-  return { ctx, pop:{ createdWithLine:createdWithLine.length, noStart } };
-}
-async function loadRfqContext(fromISO, toISO, sequence){
-  RFQ_CTX_ISSUE = null;
-  if(!RFQ_CRM || RFQ_CRM.status!=='OK'){ RFQ_CTX = {}; RFQ_POP = null; RFQ_CTX_READY = true; renderProc(); renderCircuit(); return; }
-  RFQ_CTX_READY = false; renderProc();
-  try{
-    const res = await fetchRfqContext(RFQ_CRM, fromISO, toISO);
-    if(sequence!=null && sequence!==REFRESH_SEQUENCE) return;
-    RFQ_CTX = res.ctx; RFQ_POP = res.pop;
-  }catch(e){
-    RFQ_CTX_ISSUE = sourceFailure('rfqctx', 'Quote RFQ lines', 'rfq', e);
+function renderHmsRfq(dept){
+  if(PRPO_LOADING){
+    return hmsHead() + '<div class="source-note"><strong>PR/PO figures still loading</strong></div>'
+      + '<div class="cardrow hms-row">'
+      + loadingBucketCard('Priced','PR received → supplier price','💲','#2E8B57')
+      + loadingBucketCard('Waiting for a price','PR received, not yet priced','⏳','#C0392B')
+      + '</div>';
   }
-  RFQ_CTX_READY = true;
-  renderProc(); renderCircuit(); qpCacheSave();
-}
-function rfqBandHead(dept){
-  return '<div class="procHead">RFQ · Sent for RFQ → RFQ Completed<small>· '+(dept ? escapeHtml(dept) : 'all departments')+'</small></div>';
-}
-function rfqCard(color, ic, lbl, cat, inner){
-  return '<div class="tcard" style="--tc:'+color+'" title="click to drill through" onclick="drillRfqCrm(\''+cat+'\')">'
-    + '<div class="tcard-top"><span class="tcard-ic">'+ic+'</span><span class="lbl">'+lbl+'</span></div>'+inner+'</div>';
-}
-function rfqCrmBandHtml(dept){
-  const head = rfqBandHead(dept) + '<div class="source-note"><strong>What the clock measures:</strong> '+RFQ_CRM_WORDING+'</div>';
-  const loadingRow = '<div class="cardrow rfq-row">'
-    + loadingBucketCard('Completed','Sent for RFQ → RFQ Completed','✅','#2E8B57')
-    + loadingBucketCard('Still waiting','Sent for RFQ, not yet completed','⏳','#C0392B')
-    + loadingBucketCard('Cycled','went round more than once','🔁','#E8A33D') + '</div>';
-  if(PRPO_LOADING) return head + '<div class="source-note"><strong>RFQ history still loading</strong></div>' + loadingRow;
   const issue = sourceIssue('prpo');
-  const noFigure = msg => head + '<div class="source-note"><strong>RFQ source warning:</strong> '+escapeHtml(msg)+'</div>'
-    + '<div class="cardrow rfq-row">'+bucketCardNoSource({c:'#C0392B', icon:'✉️', label:'RFQ history not read', desc:'Sent for RFQ → RFQ Completed'}, msg)+'</div>';
-  if(issue) return noFigure(sourceIssueMessage(issue));
-  if(!RFQ_CRM) return noFigure('The published dataset does not carry the Process History RFQ window yet. No figure is shown; this is not zero.');
-  if(RFQ_CRM.status!=='OK'){
-    return noFigure('Process History could not be read for this dataset (history read at '+fmtDubai(RFQ_CRM.historyReadAt)+'): '
-      + (RFQ_CRM.reason || 'no reason recorded')+'. No figure is shown; this is not zero.');
+  if(issue){
+    const msg = sourceIssueMessage(issue);
+    return hmsHead() + '<div class="source-note"><strong>RFQ source warning:</strong> '+escapeHtml(msg)+'</div>'
+      + '<div class="cardrow hms-row">'+bucketCardNoSource({c:'#C0392B', icon:'✉️', label:'RFQ source not read', desc:'gates 0.03 and 0.09'}, msg)+'</div>';
   }
-  if(!RFQ_CTX_READY) return head + '<div class="source-note"><strong>Reading the quotes\' RFQ lines…</strong></div>' + loadingRow;
-  if(RFQ_CTX_ISSUE) return noFigure(sourceIssueMessage(RFQ_CTX_ISSUE));
-  const scope = dateScope();
-  const waits = rfqCrmWaits(RFQ_CRM, RFQ_CTX, { fromMs:scope.fromMs, toMs:scope.toMs, dept });
-  const s = rfqCrmStats(waits), c = s.completed, w = s.waiting;
+  const clockNote = '<div class="source-note"><strong>What the clock measures:</strong> The clock starts when Procurement receives the requisition and stops when the supplier price is written into it. Home Maintenance requisitions do not pass through \'inquiry sent to suppliers\', which is why they were missing from the band above. Start = requisition created date and time; stop = the time gate 0.09 Supplier Price Updated in PR was reached.</div>';
+  if(dept && dept!==HMS_DEPT){
+    return hmsHead() + clockNote
+      + '<div class="source-note"><strong>Department filter:</strong> this band covers '+escapeHtml(HMS_DEPT)+' only, so it has no rows while the filter is set to '+escapeHtml(dept)+'.</div>';
+  }
+  const s = hmsRfqSplit(currentPRs(), PR_ROWS);
+  const ps = s.pricedStats, wsx = s.waitingStats;
   const d = v => v!=null ? fmtDurMs(v) : '—';
-  const donut = p => { p=Math.max(0,Math.min(100,p||0));
+  const donut=(p)=>{ p=Math.max(0,Math.min(100,p||0));
     return '<svg class="donut" viewBox="0 0 36 36" aria-hidden="true"><circle class="bgc" cx="18" cy="18" r="15.915"/>'
       + '<circle class="fgc" cx="18" cy="18" r="15.915" stroke-dasharray="'+p+' '+(100-p)+'" stroke-dashoffset="25"/>'
       + '<text x="18" y="19.5">'+p+'%</text></svg>'; };
-  const completedCard = rfqCard('#2E8B57','✅','Completed','completed',
-      '<div class="tcard-body2"><div><div class="tbig2">'+c.n+'</div><div class="tsub2">marked RFQ Completed</div></div>'
-    + '<div class="tlines"><span>median <b>'+d(c.medianMs)+'</b></span>'
-    + '<span>fastest <b>'+d(c.minMs)+'</b> · slowest <b>'+d(c.maxMs)+'</b></span>'
-    + '<span><b>'+c.within6h+' of '+c.n+'</b> within 6 hours'+(c.pct6h!=null?' ('+c.pct6h+'%)':'')+'</span></div>'
-    + (c.pct6h!=null ? donut(c.pct6h) : '') + '</div>');
-  const waitingCard = rfqCard('#C0392B','⏳','Still waiting','waiting',
-      '<div class="tcard-body2"><div><div class="tbig2">'+w.n+'</div><div class="tsub2">Sent for RFQ, not yet completed</div></div>'
-    + '<div class="tlines"><span>median wait so far <b>'+d(w.medianMs)+'</b></span>'
-    + '<span>longest <b>'+d(w.maxMs)+'</b></span>'
-    + '<span><b>'+w.over6h+' of '+w.n+'</b> over 6 hours</span></div></div>');
-  const cycledCard = rfqCard('#E8A33D','🔁','Cycled','cycled',
-      '<div class="tcard-body2"><div><div class="tbig2">'+s.cycled.quotes+'</div><div class="tsub2">quote'+(s.cycled.quotes===1?'':'s')+' went round more than once</div></div>'
-    + '<div class="tlines"><span><b>'+s.cycled.waits+'</b> separate wait'+(s.cycled.waits===1?'':'s')+' between them</span>'
-    + '<span>each cycle is counted as its own wait</span></div></div>');
-  const pop = RFQ_POP || { createdWithLine:0, noStart:[] };
-  const noStart = pop.noStart.filter(q=>!dept || q.dept===dept);
-  const topStatus = {}; noStart.forEach(q=>{ const k=q.status||'status not read'; topStatus[k]=(topStatus[k]||0)+1; });
-  const top = Object.keys(topStatus).sort((a,b)=>topStatus[b]-topStatus[a])[0];
-  const notes = [
-    '<div class="source-note"><strong>History read at</strong> '+fmtDubai(RFQ_CRM.historyReadAt)+' · newest status change held '+fmtDubai(RFQ_CRM.newestEventUtc)
-      + ' · '+escapeHtml(rfqLagText(RFQ_CRM))+'. Source: SSG Process History (development environment, audited live quote status).</div>',
-    '<div class="source-note"><strong>6-hour comparison:</strong> applied to every quote. '+RFQ_CRM_SIX_HOURS+'</div>',
-    '<div class="source-note"><strong>Scope:</strong> quotes with at least one estimation line marked RFQ = Yes, counted by the moment they were marked Sent for RFQ in the selected dates. '
-      + s.quotes+' quote'+(s.quotes===1?'':'s')+' in scope. '
-      + noStart.length+' quote'+(noStart.length===1?'':'s')+' created in these dates with an RFQ line '+(noStart.length===1?'has':'have')+' never been marked Sent for RFQ'
-      + (top ? ' (most are now '+escapeHtml(top)+')' : '')+'.'
-      + (s.movedOn ? ' '+s.movedOn+' wait'+(s.movedOn===1?'':'s')+' left Sent for RFQ without RFQ Completed and '+(s.movedOn===1?'is':'are')+' neither completed nor waiting.' : '')
-      + (s.negative ? ' '+s.negative+' wait'+(s.negative===1?'':'s')+' with RFQ Completed before Sent for RFQ '+(s.negative===1?'is':'are')+' not measured.' : '')+'</div>'
-  ];
-  return head + notes.join('') + '<div class="cardrow rfq-row">'+completedCard+waitingCard+cycledCard+'</div>';
+  const card=(color,ic,lbl,cat,inner)=>
+    '<div class="tcard" style="--tc:'+color+'" title="click to drill through" onclick="drillHms(\''+cat+'\')">'
+    + '<div class="tcard-top"><span class="tcard-ic">'+ic+'</span><span class="lbl">'+lbl+'</span></div>'+inner+'</div>';
+  const unmeasured = n => n ? '<span>'+n+' without a recorded time · not measured</span>' : '';
+  const pricedCard = card('#2E8B57','💲','Priced','priced',
+      '<div class="tcard-body2"><div><div class="tbig2">'+ps.total+'</div><div class="tsub2">priced · '+ps.measured+' measured</div></div>'
+    + '<div class="tlines"><span>median <b>'+d(ps.medianMs)+'</b></span>'
+    + '<span>fastest <b>'+d(ps.minMs)+'</b> · slowest <b>'+d(ps.maxMs)+'</b></span>'
+    + '<span><b>'+ps.within6h+' of '+ps.measured+'</b> within 6 hours'+(ps.pct6h!=null?' ('+ps.pct6h+'%)':'')+'</span>'
+    + unmeasured(ps.unmeasured)+'</div>'
+    + (ps.pct6h!=null ? donut(ps.pct6h) : '') + '</div>');
+  const waitingCard = card('#C0392B','⏳','Waiting for a price','waiting',
+      '<div class="tcard-body2"><div><div class="tbig2">'+wsx.total+'</div><div class="tsub2">received, not yet priced</div></div>'
+    + '<div class="tlines"><span>median wait so far <b>'+d(wsx.medianMs)+'</b></span>'
+    + '<span>longest wait <b>'+d(wsx.maxMs)+'</b></span>'
+    + '<span><b>'+wsx.over6h+' of '+wsx.measured+'</b> over 6 hours</span>'
+    + unmeasured(wsx.unmeasured)+'</div></div>');
+  const otherKeys = Object.keys(s.other);
+  const otherText = otherKeys.length
+    ? ' Also not counted: '+otherKeys.map(k=>s.other[k]+' at '+escapeHtml(k)).join(', ')+' (neither waiting at 0.03 nor priced at 0.09).'
+    : '';
+  return hmsHead() + clockNote
+    + '<div class="source-note"><strong>6-hour target:</strong> 6-hour target applied to every Home Maintenance requisition. The system does not mark which are regular or recurring, so one-off work is included.</div>'
+    + '<div class="source-note"><strong>Not counted:</strong> Requisitions that have already moved on to an LPO are not counted — the feed carries only the current step. '
+    + s.movedOnFeed+' Home Maintenance requisition'+(s.movedOnFeed===1?' is':'s are')+' at 0.20 LPO Created in the feed ('+s.movedOnInScope+' of them created in the selected dates).'+otherText+'</div>'
+    + '<div class="source-note"><strong>Scope:</strong> '+s.inScope+' of '+s.feedTotal+' Home Maintenance requisitions in the feed were created in the selected dates.</div>'
+    + '<div class="cardrow hms-row">'+pricedCard+waitingCard+'</div>';
 }
 function renderProc(){
-  const el = document.getElementById('procKpis'); if(!el) return;
-  const deptEl = document.getElementById('deptSel');
-  el.innerHTML = rfqCrmBandHtml(deptEl ? deptEl.value : '');
+  const dept = document.getElementById('deptSel').value;
+  const scopeLabel = dept ? escapeHtml(dept) : 'all departments';
+  if(PRPO_LOADING){
+    document.getElementById('procKpis').innerHTML =
+        '<div class="procHead">Procurement · RFQ Waiting Time<small>· PR created → inquiry sent · '+scopeLabel+'</small></div>'
+      + '<div class="source-note"><strong>PR/PO figures still loading</strong></div>'
+      + '<div class="cardrow">'
+      + loadingBucketCard('Waiting RFQs','CPR PRs still at RFQ','📄','#145A95')
+      + loadingBucketCard('Median elapsed','PR created → inquiry sent','🕐','#145A95')
+      + loadingBucketCard('6h eligibility','Home Maintenance Services only','🎯','#E8A33D')
+      + loadingBucketCard('Longest elapsed','all waiting RFQs','⏱️','#618FB4')
+      + '</div>' + renderHmsRfq(dept);
+    return;
+  }
+  const rfqIssue = sourceIssue('prpo');
+  if(rfqIssue){
+    const msg = sourceIssueMessage(rfqIssue);
+    document.getElementById('procKpis').innerHTML =
+        '<div class="procHead">Procurement · RFQ Waiting Time'
+      + '<small>· PR created → inquiry sent to suppliers · '+scopeLabel+'</small></div>'
+      + '<div class="source-note"><strong>RFQ source warning:</strong> '+escapeHtml(msg)+'</div>'
+      + '<div class="cardrow">'
+      + bucketCardNoSource({c:'#C0392B', icon:'✉️', label:'RFQ source not read', desc:'authorised gate 0.05'}, msg)
+      + '</div>' + renderHmsRfq(dept);
+    return;
+  }
+  const split = rfqWaitingSplit(currentPRs(), DATA.concat(TREND_DATA));
+  const recs = split.waiting.map(rfqRecord);
+  const measured = recs.filter(r=>r.rfqMs!=null);
+  const total   = recs.length;
+  const pct     = n => total ? Math.round(n/total*100) : 0;
+  const medMs = median(measured.map(r=>r.rfqMs));
+  const avgMs = avg(measured.map(r=>r.rfqMs));
+  const longestMs = measured.length ? Math.max.apply(null,measured.map(r=>r.rfqMs)) : null;
+  const excludedCount = split.excluded.length;
+  const draftingExcluded = draftingClockExclusions(DATA);
+  const draftingClockText = draftingExcluded
+    ? draftingExcluded+' quote row'+(draftingExcluded===1?'':'s')+' could not be measured because the recorded requisition creation time is earlier than the quote creation time.'
+    : '0 quote rows are excluded because of a requisition creation time earlier than the quote creation time.';
+
+  // donut ring: r=15.915 makes the circumference exactly 100, so dasharray = percentage
+  const donut=(p)=>{ p=Math.max(0,Math.min(100,p));
+    return '<svg class="donut" viewBox="0 0 36 36" aria-hidden="true"><circle class="bgc" cx="18" cy="18" r="15.915"/>'
+      + '<circle class="fgc" cx="18" cy="18" r="15.915" stroke-dasharray="'+p+' '+(100-p)+'" stroke-dashoffset="25"/>'
+      + '<text x="18" y="19.5">'+p+'%</text></svg>'; };
+  const shell=(color,ic,lbl,cat,inner)=>
+    '<div class="tcard" style="--tc:'+color+'" title="click to drill through" onclick="drillRfq(\''+cat+'\')">'
+    + '<div class="tcard-top"><span class="tcard-ic">'+ic+'</span><span class="lbl">'+lbl+'</span></div>'+inner+'</div>';
+  const staticShell=(color,ic,lbl,inner)=>
+    '<div class="tcard static" style="--tc:'+color+'">'
+    + '<div class="tcard-top"><span class="tcard-ic">'+ic+'</span><span class="lbl">'+lbl+'</span></div>'+inner+'</div>';
+  const noSource = split.candidates.length === 0;
+  const hmsFeed = PR_ROWS.filter(p=>isCpr(p) && isHmsPr(p));
+  const hmsAtInquiry = hmsFeed.filter(isRfqGatePr).length;
+  const noSourceCard = (dept===HMS_DEPT && hmsAtInquiry===0)
+    ? staticShell('#145A95','📄','Waiting RFQs',
+        '<div class="tcard-body2"><div><div class="tbig2">0</div><div class="tsub2">no Home Maintenance requisition passes through this step</div></div>'
+      + '<span class="tavg"><span class="tsub2">0 of '+hmsFeed.length+' Home Maintenance requisitions in the feed are at gate 0.05 · see the Home Maintenance band below</span></span></div>')
+    : bucketCardNoSource({c:'#C0392B', icon:'✉️', label:'RFQ source', desc:'authorised gate 0.05'}, sourceEmptyMessage('RFQ gate 0.05'));
+  const totalCard = shell('#145A95','📄','Waiting RFQs','total',
+      '<div class="tcard-body2"><div><div class="tbig2">'+total+'</div><div class="tsub2">CPR PRs still waiting at RFQ</div></div>'
+    + '<span class="tavg"><span class="tsub2">'+excludedCount+' moved-on gate row'+(excludedCount===1?'':'s')+' excluded</span></span></div>');
+  const medianCard = shell('#145A95','🕐','Median elapsed','median',
+      '<div class="tcard-body2"><span class="tbig2">'+(medMs!=null?fmtDurMs(medMs):'—')+'</span>'
+    + '<span class="tavg"><span class="tsub2">'+measured.length+' of '+total+' rows measured</span></span>'
+    + donut(pct(measured.length)) + '</div>');
+  const targetCard = staticShell('#E8A33D','🎯','6h eligibility',
+      '<div class="tcard-body2"><span class="pendchip">not identifiable</span>'
+    + '<span class="tavg"><span class="tsub2">Home Maintenance Services only · no percentage shown</span></span></div>');
+  const longestCard = shell('#618FB4','⏱️','Longest elapsed','longest',
+      '<div class="tcard-body2"><span class="tbig2">'+(longestMs!=null?fmtDurMs(longestMs):'—')+'</span>'
+    + '<span class="tavg">🕐 '+(avgMs!=null?fmtDurMs(avgMs):'—')+' <span class="tsub2">average · all waiting RFQs</span></span></div>');
+
+  document.getElementById('procKpis').innerHTML =
+      '<div class="procHead">Procurement · RFQ Waiting Time'
+    + '<small>· PR created → inquiry sent to suppliers · '+scopeLabel+'</small></div>'
+    + '<div class="source-note"><strong>Waiting population:</strong> requisitions at authorised gate 0.05 are counted unless downstream CRM evidence shows the quote has moved past RFQ.</div>'
+    + '<div class="source-note"><strong>Progression check:</strong> '+excludedCount+' gate row'+(excludedCount===1?' is':'s are')+' excluded because downstream CRM evidence shows '+(excludedCount===1?'the quote has':'the quotes have')+' already moved past RFQ.</div>'
+    + '<div class="source-note"><strong>Drafting measurement check:</strong> '+escapeHtml(draftingClockText)+'</div>'
+    + '<div class="source-note"><strong>6-hour target:</strong> applies only to '+escapeHtml(RFQ_TARGET_POLICY.department)+' '+escapeHtml(RFQ_TARGET_POLICY.definition)+'. '+escapeHtml(RFQ_TARGET_POLICY.markerReason)+' No row is assessed against the target and the percentage is suppressed.</div>'
+    + '<div class="cardrow">'
+    + (noSource ? noSourceCard : totalCard + medianCard + targetCard + longestCard)
+    + '</div>' + renderHmsRfq(dept);
 }
 
 /* ============================ DRILL-THROUGH ============================ */
@@ -1931,99 +1908,42 @@ async function drillBucket(k, w){
       x.s.end!=null ? fmt(x.s.end) : '<span class="drill-ongoing">ongoing · now</span>',
       '<b>'+fmtDurMs(x.hit)+'</b>' ]));
 }
-// Drill an RFQ card: one row per wait with the F&O sub-steps of the quote's requisitions.
-function qlinkId(id, qn){ return id ? '<a class="drill-q" href="'+quoteUrl(id)+'" target="_blank" rel="noopener">'+escapeHtml(qn||'—')+'</a>' : escapeHtml(qn||'—'); }
-function drillRfqCrm(cat){
-  const deptEl = document.getElementById('deptSel'), dept = deptEl ? deptEl.value : '';
-  const scope = dateScope();
-  const waits = rfqCrmWaits(RFQ_CRM, RFQ_CTX, { fromMs:scope.fromMs, toMs:scope.toMs, dept });
-  const cycled = new Set(waits.filter(w=>w.cycles>1).map(w=>w.quoteId));
-  const list = (cat==='cycled' ? waits.filter(w=>cycled.has(w.quoteId)) : waits.filter(w=>w.state===cat))
-    .slice().sort((a,b)=> cat==='cycled' ? (a.quoteId.localeCompare(b.quoteId) || a.cycleNo-b.cycleNo) : ((b.elapsedMs||0)-(a.elapsedMs||0)));
-  const label = cat==='waiting' ? 'Still waiting — Sent for RFQ → now' : (cat==='cycled' ? 'Cycled — every wait of quotes that went round more than once' : 'Completed — Sent for RFQ → RFQ Completed');
-  const time = w => w.elapsedMs==null ? '—' : '<b>'+fmtDurMs(w.elapsedMs)+'</b>'
-    + (w.state==='completed' && w.elapsedMs<=RFQ_THRESHOLD_MS ? ' '+tintTag('within 6h','#2E8B57') : '')
-    + (w.state==='waiting' && w.elapsedMs>RFQ_THRESHOLD_MS ? ' '+tintTag('over 6h','#C0392B') : '');
-  openDrill('RFQ · '+label+' · '+(dept||'all departments'),
-    ['Quote','Department','Project','Sent for RFQ','RFQ Completed','Elapsed','Cycles','F&amp;O sub-steps'],
-    list.map(w=>[ qlinkId(w.quoteId, w.ctx.quoteNo), escapeHtml(w.ctx.dept||'—'), escapeHtml(w.ctx.project||'—'), fmt(w.sentAt)||'—',
-      w.completedAt ? fmt(w.completedAt) : '<span class="drill-ongoing">'+(w.state==='waiting' ? 'waiting · now' : 'left Sent for RFQ')+'</span>',
-      time(w), w.cycles>1 ? 'cycle '+w.cycleNo+' of '+w.cycles : '1', rfqStepsHtml(rfqSteps(w.ctx.quoteNo)) ]));
+// Drill an RFQ-performance card: lists the CPR PRs in that category with their RFQ timing.
+async function drillRfq(cat){
+  const recs = rfqRecs();
+  let list = recs, label = 'Waiting RFQs';
+  if(cat==='median'){ label='Waiting RFQs · median source rows'; }
+  else if(cat==='longest'){ label='Waiting RFQs · longest first'; }
+  list = list.slice().sort((a,b)=> ((b.rfqMs)||0) - ((a.rfqMs)||0));
+  const detailed = await detailedPrRows(list.map(x=>x.p));
+  list = list.map((x,index)=>Object.assign({},x,{p:detailed[index]}));
+  openDrill(label+' — PR created → inquiry sent', ['PR No','PR Name','Project','Quote No','PR Created','Inquiry Sent','Time','Gate'],
+    list.map(x=>{
+      return [ escapeHtml(x.p.purchaseRequisition||'—'), escapeHtml(x.p.name||x.p.description||x.p.title||'—'), escapeHtml(prProject(x.p)||'—'), qlinkNo(x.qn), fmt(prCreatedAt(x.p))||'—',
+        fmt(x.inquiryT)||'<span class="drill-ongoing">not recorded</span>',
+        '<b>'+(x.rfqMs!=null ? fmtDurMs(x.rfqMs) : '—')+'</b>', tintTag((x.p.authorisedGateNumber||'0.05')+' '+(x.p.authorisedGateName||'Inquiry Sent to Suppliers'),'#145A95') ];
+    }));
 }
-
-/* ---- RFQ circuit: one panel per quote pending RFQ, completed in the last 7 days in a second lane ---- */
-let CIRCUIT_OPEN = false;
-function circuitLanes(section, ctx, dept, nowMs){
-  const now = nowMs!=null ? nowMs : Date.now();
-  const waits = rfqCrmWaits(section, ctx, { dept, nowMs:now });
-  const pending = waits.filter(w=>w.state==='waiting').sort((a,b)=>b.elapsedMs-a.elapsedMs);
-  const since = now - RFQ_CIRCUIT_DONE_DAYS*864e5;
-  const done = waits.filter(w=>w.state==='completed' && ms(w.completedAt)>=since).sort((a,b)=>ms(b.completedAt)-ms(a.completedAt));
-  return { pending, done };
-}
-function circuitStep(w){
-  const steps = rfqSteps(w.ctx.quoteNo);
-  if(!steps.length) return { text:'no requisition in the F&O feed', holder:'' };
-  const s = steps[steps.length-1];
-  const holder = steps.map(x=>x.holder).filter(Boolean)[0] || '';
-  return { text:escapeHtml(s.pr)+' · '+escapeHtml(rfqStepText(s))+(s.stepDate ? ' since '+fmt(s.stepDate) : ''), holder };
-}
-function circuitPanel(w){
-  const step = circuitStep(w);
-  const over = w.state==='waiting' && w.elapsedMs>RFQ_THRESHOLD_MS;
-  const cls = w.state==='completed' ? ' done' : (over ? ' over6' : '');
-  const waitLine = w.state==='completed'
-    ? '<div class="circ-wait"><b>'+fmtDurMs(w.elapsedMs)+'</b><span>Sent for RFQ → RFQ Completed'+(w.elapsedMs<=RFQ_THRESHOLD_MS?' · within 6h':'')+'</span></div>'
-    : '<div class="circ-wait"><b>'+fmtDurMs(w.elapsedMs)+'</b><span>waiting'+(over?' · over 6h':'')+'</span></div>';
-  return '<div class="circ-panel'+cls+'">'
-    + '<div class="circ-top">'+qlinkId(w.quoteId, w.ctx.quoteNo)+'<span class="circ-dept">'+escapeHtml(w.ctx.dept||'department not recorded')+'</span></div>'
-    + '<div class="circ-proj" title="'+escapeHtml(w.ctx.project||'')+'">'+escapeHtml(w.ctx.project||'project not recorded')+'</div>'
-    + waitLine
-    + '<div class="circ-line">Sent for RFQ <b>'+(fmt(w.sentAt)||'—')+'</b>'+(w.completedAt ? ' · completed <b>'+fmt(w.completedAt)+'</b>' : '')+(w.cycles>1?' · cycle '+w.cycleNo+' of '+w.cycles:'')+'</div>'
-    + '<div class="circ-line">F&amp;O now: <b>'+step.text+'</b></div>'
-    + '<div class="circ-line">Holder: '+(step.holder ? '<b>'+escapeHtml(step.holder)+'</b>' : 'not recorded')+'</div>'
-    + '</div>';
-}
-function renderCircuit(){
-  if(!CIRCUIT_OPEN) return;
-  const deptEl = document.getElementById('deptSel'), dept = deptEl ? deptEl.value : '';
-  const meta = document.getElementById('circMeta'), pendEl = document.getElementById('circPending'), doneEl = document.getElementById('circDone');
-  if(!meta || !pendEl || !doneEl) return;
-  const blank = msg => { pendEl.innerHTML = '<div class="circ-empty">'+escapeHtml(msg)+'</div>'; doneEl.innerHTML=''; 
-    document.getElementById('circPendCount').textContent=''; document.getElementById('circDoneCount').textContent=''; };
-  meta.innerHTML = circuitMetaHtml();
-  if(PRPO_LOADING || (!RFQ_CTX_READY && RFQ_CRM && RFQ_CRM.status==='OK')) return blank('RFQ history still loading…');
-  if(!RFQ_CRM || RFQ_CRM.status!=='OK') return blank('Process History could not be read for this dataset'+(RFQ_CRM && RFQ_CRM.reason ? ': '+RFQ_CRM.reason : '')+'. No panel is shown; this is not zero.');
-  if(RFQ_CTX_ISSUE) return blank(sourceIssueMessage(RFQ_CTX_ISSUE));
-  const lanes = circuitLanes(RFQ_CRM, RFQ_CTX, dept);
-  document.getElementById('circPendCount').textContent = '· '+lanes.pending.length+' quote'+(lanes.pending.length===1?'':'s')+' · '+lanes.pending.filter(w=>w.elapsedMs>RFQ_THRESHOLD_MS).length+' over 6 hours';
-  document.getElementById('circDoneCount').textContent = '· '+lanes.done.length+' wait'+(lanes.done.length===1?'':'s')+' · '+lanes.done.filter(w=>w.elapsedMs<=RFQ_THRESHOLD_MS).length+' within 6 hours';
-  pendEl.innerHTML = lanes.pending.length ? lanes.pending.map(circuitPanel).join('') : '<div class="circ-empty">No quote is waiting in Sent for RFQ'+(dept?' for '+escapeHtml(dept):'')+'.</div>';
-  doneEl.innerHTML = lanes.done.length ? lanes.done.map(circuitPanel).join('') : '<div class="circ-empty">No quote was marked RFQ Completed in the last 7 days'+(dept?' for '+escapeHtml(dept):'')+'.</div>';
-}
-function circuitMetaHtml(){
-  const deptEl = document.getElementById('deptSel'), dept = deptEl ? deptEl.value : '';
-  const read = RFQ_CRM && RFQ_CRM.historyReadAt ? ' · history read at <b>'+fmtDubai(RFQ_CRM.historyReadAt)+'</b>' : '';
-  return escapeHtml(RFQ_CRM_WORDING)+'<br><b>'+escapeHtml(dept||'All departments')+'</b>'+read
-    + ' · all pending quotes, whatever the date filter · holder is the requisition\'s pending approver or user in F&amp;O, when recorded.';
-}
-async function loadCircuitHolders(){
-  const nos = new Set(circuitLanes(RFQ_CRM, RFQ_CTX, '').pending.map(w=>w.ctx.quoteNo).filter(Boolean));
-  const prs = (PR_ROWS||[]).filter(p=>isCpr(p) && nos.has(p.quotationReference) && !p.holder);
-  if(!prs.length) return;
-  const detailed = await detailedPrRows(prs);
-  const byNo = {}; detailed.forEach(p=>{ if(p && p.purchaseRequisition) byNo[p.purchaseRequisition]=p; });
-  PR_ROWS = PR_ROWS.map(p=> byNo[p.purchaseRequisition] && byNo[p.purchaseRequisition].holder ? Object.assign({}, p, { holder:byNo[p.purchaseRequisition].holder }) : p);
-  renderCircuit();
-}
-function toggleCircuit(open){
-  CIRCUIT_OPEN = open==null ? !CIRCUIT_OPEN : !!open;
-  const show = (id, on) => { const el=document.getElementById(id); if(el) el.style.display = on ? '' : 'none'; };
-  show('rfqCircuit', CIRCUIT_OPEN);
-  ['trendKpis','procKpis','wrap'].forEach(id=>show(id, !CIRCUIT_OPEN));
-  const btn = document.getElementById('circuitBtn'); if(btn) btn.textContent = CIRCUIT_OPEN ? 'Dashboard' : 'RFQ circuit';
-  try{ history.replaceState(null, '', CIRCUIT_OPEN ? '#rfq-circuit' : window.location.pathname + window.location.search); }catch(e){}
-  if(CIRCUIT_OPEN){ renderCircuit(); loadCircuitHolders().catch(()=>{}); }
+async function drillHms(cat){
+  const s = hmsRfqSplit(currentPRs(), PR_ROWS);
+  const waiting = cat==='waiting';
+  let list = (waiting ? s.waiting : s.priced).slice().sort((a,b)=>
+    (a.elapsedMs==null) - (b.elapsedMs==null) || (b.elapsedMs||0) - (a.elapsedMs||0));
+  const detailed = await detailedPrRows(list.map(x=>x.p));
+  list = list.map((x,index)=>Object.assign({},x,{p:detailed[index]}));
+  const notRecorded = '<span class="drill-ongoing">not recorded</span>';
+  const time = x => '<b>'+(x.elapsedMs!=null ? fmtDurMs(x.elapsedMs) : '—')+'</b>'
+    + (x.elapsedMs!=null && x.elapsedMs<=RFQ_THRESHOLD_MS ? ' '+tintTag('within 6h','#2E8B57') : '');
+  const base = x => [ escapeHtml(x.p.purchaseRequisition||'—'), qlinkNo(x.qn), escapeHtml(prProject(x.p)||'—'), fmt(x.start)||notRecorded ];
+  if(waiting){
+    openDrill('Home Maintenance · waiting for a price — PR received → now',
+      ['PR No','Quote No','Project','PR Created · waiting since','Gate 0.03 recorded','Waiting so far'],
+      list.map(x=>base(x).concat([ fmt(x.p.stepDate)||notRecorded, time(x) ])));
+  }else{
+    openDrill('Home Maintenance · priced — PR received → supplier price updated',
+      ['PR No','Quote No','Project','PR Created','Priced at','Time to price'],
+      list.map(x=>base(x).concat([ fmt(x.end)||notRecorded, time(x) ])));
+  }
 }
 
 /* ---- Race-Control splash: falling rain lines + dismiss ---- */
@@ -2058,12 +1978,7 @@ function dismissSplash(){
 }
 
 /* ============================ BOOT ============================ */
-window.__QP_TEST__ = { weekBoundaries, dubaiWeekStartUtc, freshnessState, datasetScheduleState, staleRefreshLabel, updateDatasetStaleBanner, sourceEmptyMessage, normalizePrRows, rfqSourceRows, rfqElapsedMs, draftingClockExclusions, median, recordFreshness, mergeFutureIgnored, futureIgnoredText, applyTheme, toggleTheme, sourceFailure, mergeSourceIssues, sourceIssueMessage, fetchDataverseSources, fetchPrpoSource, joinSources, fetchAndJoin,
-  RFQ_CRM_STATUS, RFQ_CRM_WORDING, RFQ_CRM_SIX_HOURS, rfqCrmRows, rfqCrmWaits, rfqCrmStats, rfqSteps, rfqContextIds, rfqCrmBandHtml, circuitLanes, circuitPanel,
-  setRfqState(s){
-    if('RFQ_CRM' in s) RFQ_CRM=s.RFQ_CRM; if('RFQ_CTX' in s) RFQ_CTX=s.RFQ_CTX; if('RFQ_POP' in s) RFQ_POP=s.RFQ_POP;
-    if('RFQ_CTX_READY' in s) RFQ_CTX_READY=s.RFQ_CTX_READY; if('PR_ROWS' in s) PR_ROWS=s.PR_ROWS; if('PRPO_LOADING' in s) PRPO_LOADING=s.PRPO_LOADING;
-  } };
+window.__QP_TEST__ = { weekBoundaries, dubaiWeekStartUtc, freshnessState, datasetScheduleState, staleRefreshLabel, updateDatasetStaleBanner, sourceEmptyMessage, normalizePrRows, rfqSourceRows, rfqElapsedMs, draftingClockExclusions, stageHasProgress, estimationHasProgress, quoteProgressedPastRfq, rfqWaitingSplit, rfqRecord, RFQ_TARGET_POLICY, HMS_DEPT, isHmsPr, hmsRfqSplit, hmsStats, median, recordFreshness, mergeFutureIgnored, futureIgnoredText, applyTheme, toggleTheme, sourceFailure, mergeSourceIssues, sourceIssueMessage, fetchDataverseSources, fetchPrpoSource, joinSources, fetchAndJoin };
 initTheme();
 initSplash();
 (async function(){

@@ -74,3 +74,7 @@ The department dropdown already filtered the 0.05 band. With Home Maintenance se
 ### Access
 
 - The live band depends on the proxy reading SSG Process History in DEV. At release the proxy identity was refused (Dataverse `0x80040220`, missing read on the process event table), so the live band shows the refusal until that read is granted.
+
+## 25 September 2026, 11:35 Dubai: rolled back to v61
+
+The live page is back to the v61 page (`index.html` and tests restored to their 24 September content). v62 showed a refusal in place of RFQ figures, because the proxy cannot yet read SSG Process History. v62 is kept on the branch `cursor/v62-rfq-crm-window-2853` and can be restored once that read is granted. No permission, role or setting was changed.
