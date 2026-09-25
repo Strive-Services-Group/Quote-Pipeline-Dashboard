@@ -44,3 +44,33 @@ The department dropdown already filtered the 0.05 band. With Home Maintenance se
 - The feed carries only the current step, so a requisition priced and then moved on to an LPO is not in the priced figures.
 - The median is the standard median, the mean of the two middle values when the count is even.
 - Waiting figures grow with time between reads.
+
+## 25 September 2026: v62 one RFQ band on the CRM clock
+
+### What changed
+
+- The two RFQ bands (gate 0.05 and the Home Maintenance 0.03 to 0.09 band) are replaced by one band: "RFQ · Sent for RFQ → RFQ Completed · all departments". The department dropdown applies.
+- Population: quotes with at least one RFQ quote line. The clock starts when the quote is marked Sent for RFQ and stops when it is marked RFQ Completed. What Procurement does in F&O in between is shown inside each row.
+- The system does not mark regular or recurring work, so one-off work is included.
+- Cards: Completed (count, median, fastest, slowest, within 6h), Still waiting (count, median wait, longest, over 6h), Cycled. Each card drills to rows with the F&O sub-steps.
+- The band shows when the history was read and the observed capture lag.
+- New RFQ circuit view (header button, or `#rfq-circuit`): one panel per quote waiting on RFQ, longest wait first, and a lane of completions in the last 7 days.
+- If the proxy cannot read the history, the band says so and states that this is not zero. No figure is shown.
+
+### Recount on the new definition (quotes created since 25 August, Dubai)
+
+| Scope | Completed | Median | Within 6h | Still waiting |
+|---|---:|---|---:|---:|
+| All departments | 186 | 1d 0h | 68 (37%) | 73 |
+| Facilities Management | 105 | 2d 3h | 28 (27%) | 71 |
+| Home Services | 81 | 6h 15m | 40 (49%) | 2 |
+| Building Services | 93 | 2d 3h | 23 | 59 |
+| Home Maintenance | 73 | 14h 55m | 35 (48%) | 2 |
+
+- Every quote had one cycle. Negative and zero durations: none.
+- 30 population quotes were never marked Sent for RFQ.
+- v61 Home Maintenance (36 priced, 15 within 6h) used the F&O gate clock on requisitions at gate 0.09. The new figure uses the CRM quote status on quotes with an RFQ line. The F&O feed kept only the current step, so requisitions that were priced and moved on dropped out of v61.
+
+### Access
+
+- The live band depends on the proxy reading SSG Process History in DEV. At release the proxy identity was refused (Dataverse `0x80040220`, missing read on the process event table), so the live band shows the refusal until that read is granted.
