@@ -19,6 +19,7 @@ Strive quote and RFQ ageing page for signed-in staff at https://strive-services-
 
 ## Release
 - Branch from `main`; PR to `main`. `.github/workflows/deploy.yml` runs `tests/release-gates.js` before GitHub Pages deployment on main.
+- Merging to main deploys live: yes, through `.github/workflows/deploy.yml` after the release gate passes.
 - Confirm the workflow and served `index.html` version; signed-in source checks must cover figures, stale state and the RFQ circuit.
 
 ## Conventions
